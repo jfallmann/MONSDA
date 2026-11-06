@@ -306,7 +306,7 @@ for (contrast in comparison) {
         check_shrinkage(res, res_shrink, label = listname)
 
         if (postde_enabled) {
-            postde_capture(engine = "deseq2", id = listname, A = A, B = B, normalized = TRUE, metadata = meta_b, counts = counts_b, expression = assay(vsd_b), formula = design_b, results = postde_results_deseq2(res), mean_scale = "baseMean")
+            postde_capture(engine = "deseq2", id = listname, A = A, B = B, normalized = TRUE, metadata = meta_b, counts = counts_b, expression = assay(vsd_b), formula = design_b, results = postde_results_deseq2(res), mean_scale = "baseMean", gtf = gtf_gene)
         }
 
         resOrdered <- format_deseq2_results(res_shrink[order(res_shrink$log2FoldChange), ], gtf_gene, shrink = TRUE, center = TRUE)
@@ -437,7 +437,7 @@ for (contrast in comparison) {
 
         # add comp object to list for image
         if (postde_enabled) {
-            postde_capture(engine = "deseq2", id = contrast_name, A = A, B = B, normalized = FALSE, metadata = sampleData, counts = countData, expression = assay(vsd), formula = design, results = postde_results_deseq2(res), mean_scale = "baseMean")
+            postde_capture(engine = "deseq2", id = contrast_name, A = A, B = B, normalized = FALSE, metadata = sampleData, counts = countData, expression = assay(vsd), formula = design, results = postde_results_deseq2(res), mean_scale = "baseMean", gtf = gtf_gene)
         }
         comparison_objs[[contrast_name]] <- res
 

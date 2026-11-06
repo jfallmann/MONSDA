@@ -292,7 +292,7 @@ for (contrast in comparison) {
         qlf <- glmQLFTest(branch$fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
 
         if (postde_enabled) {
-            postde_capture(engine = "edger", id = paste0(contrast_name, suffix), A = A, B = B, normalized = TRUE, metadata = meta_b, counts = counts_b, expression = cpm(branch$dge, log = TRUE), formula = des_b, results = postde_results_edger(qlf), mean_scale = "logCPM")
+            postde_capture(engine = "edger", id = paste0(contrast_name, suffix), A = A, B = B, normalized = TRUE, metadata = meta_b, counts = counts_b, expression = cpm(branch$dge, log = TRUE), formula = des_b, results = postde_results_edger(qlf), mean_scale = "logCPM", gtf = gtf_gene)
         }
 
         res <- format_edger_results(qlf$table, gtf_gene, center = TRUE)
@@ -514,7 +514,7 @@ for (contrast in comparison) {
         }
         # add comp object to list for image
         if (postde_enabled) {
-            postde_capture(engine = "edger", id = contrast_name, A = A, B = B, normalized = FALSE, metadata = sampleData, counts = countData, expression = cpm(dge, log = TRUE), formula = des, results = postde_results_edger(qlf), mean_scale = "logCPM")
+            postde_capture(engine = "edger", id = contrast_name, A = A, B = B, normalized = FALSE, metadata = sampleData, counts = countData, expression = cpm(dge, log = TRUE), formula = des, results = postde_results_edger(qlf), mean_scale = "logCPM", gtf = gtf_gene)
         }
         comparison_objs[[contrast_name]] <- qlf
 

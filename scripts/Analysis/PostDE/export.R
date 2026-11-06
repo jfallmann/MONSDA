@@ -69,7 +69,7 @@ postde_results_edger <- function(qlf) {
     out
 }
 
-postde_capture <- function(engine, id, A, B, normalized, metadata, counts, expression, formula, results, mean_scale, library_normalized = TRUE) {
+postde_capture <- function(engine, id, A, B, normalized, metadata, counts, expression, formula, results, mean_scale, library_normalized = TRUE, gtf = NULL) {
     metadata <- as.data.frame(metadata)
     counts <- as.matrix(counts)
     expression <- as.matrix(expression)
@@ -100,6 +100,14 @@ postde_capture <- function(engine, id, A, B, normalized, metadata, counts, expre
     design <- model.matrix(formula, data = md)
     contrast <- postde_contrast(formula, metadata, A, B)
     postde_validate_design(design, contrast)
+    # raw-count CPM/TPM of this entry's samples (control genes are already absent
+    # from `counts`), used by the PostDE expressed-gene background
+    cpm_mat <- NULL
+    tpm_mat <- NULL
+    if (!is.null(gtf) && exists("calc_cpm", mode = "function")) {
+        cpm_mat <- calc_cpm(counts)
+        tpm_mat <- calc_tpm(counts, gtf)
+    }
     entry <- list(
         id = id,
         A = A,
@@ -112,7 +120,9 @@ postde_capture <- function(engine, id, A, B, normalized, metadata, counts, expre
         design = design,
         contrast = contrast,
         results = results,
-        mean_scale = mean_scale
+        mean_scale = mean_scale,
+        cpm = cpm_mat,
+        tpm = tpm_mat
     )
     # Spill each entry to its own file immediately rather than keeping every
     # contrast's counts/expression matrices resident for the whole run: with

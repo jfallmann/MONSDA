@@ -17,7 +17,7 @@ from functools import reduce
 from snakemake.common.configfile import load_configfile
 
 from MONSDA.Logger import *
-from MONSDA.PostDE import load_postde_config
+from MONSDA.extras.PostDE import load_postde_config, POSTDE_DEFAULTS
 
 from . import _version
 
@@ -35,7 +35,7 @@ configpath = os.path.join(installpath, "MONSDA", "configs")
 current_path = os.getcwd()
 
 template = load_configfile(os.sep.join([configpath, "template_base_commented.json"]))
-none_workflow_keys = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION", "POSTDE"]
+none_workflow_keys = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]
 comparable_workflows = ["DE", "DEU", "DAS", "DTU", "PEAKS"]
 quantifying_workflows = ["COUNTING"]
 IP_workflows = ["PEAKS"]
@@ -112,7 +112,7 @@ class PROJECT:
         self.workflowsDict = NestedDefaultDict()
         self.settingsDict = NestedDefaultDict()
         self.settingsList = []
-        self.postde = {"enabled": False, "config": ""}
+        self.postde = {"enabled": False}
 
 
 class GUIDE:
@@ -1313,9 +1313,14 @@ def modify(config=None):
         for e in modify_config["WORKFLOWS"].split(","):
             if e in inactive_workflows:
                 inactive_workflows.remove(e)
-        project.postde = modify_config.get(
-            "POSTDE", {"enabled": False, "config": ""}
+        de_conf = modify_config.get("DE")
+        project.postde = (
+            de_conf.get("POSTDE", {"enabled": False})
+            if isinstance(de_conf, dict)
+            else {"enabled": False}
         )
+        if "DE" in project.workflowsDict:
+            project.workflowsDict["DE"].pop("POSTDE", None)
         prRed("\n   Following configuration was found :\n")
         prRed("   Condition-Tree:\n")
         print_dict(project.conditionsDict, gap="      ")
@@ -1798,34 +1803,30 @@ def configure_postde(final_dict):
         if w.strip()
     ]
     if "DE" not in workflows:
-        final_dict["POSTDE"] = {"enabled": False, "config": ""}
         return
-    current = getattr(project, "postde", {"enabled": False, "config": ""})
+    current = getattr(project, "postde", {"enabled": False})
     guide.display(
         question="Enable PostDE analysis (GO/GSEA/GSVA/decoupleR/dream) after DE?",
         proof=["yes", "no"],
         spec="yes" if current.get("enabled") else "no",
     )
     if guide.answer.strip().lower() not in ("yes", "y"):
-        final_dict["POSTDE"] = {"enabled": False, "config": ""}
+        final_dict["DE"]["POSTDE"] = {"enabled": False}
         return
-    while True:
-        guide.display(
-            question="Enter the absolute path to the PostDE analysis JSON",
-            whitespace=True,
-            spec=current.get("config", ""),
-        )
-        path = guide.answer.strip()
-        if not path:
-            path = current.get("config", "")
-        try:
-            final_dict["POSTDE"] = load_postde_config(
-                {"enabled": True, "config": path}, config=final_dict
-            )
-            return
-        except ValueError as err:
-            prRed("PostDE config invalid: " + str(err))
-            continue
+    section = (
+        current
+        if current.get("enabled") and len(current) > 1
+        else json.loads(json.dumps(POSTDE_DEFAULTS))
+    )
+    section["enabled"] = True
+    final_dict["DE"]["POSTDE"] = section
+    try:
+        load_postde_config(final_dict)
+    except ValueError as err:
+        prRed("DE.POSTDE invalid, please edit it in the written config: " + str(err))
+    prCyan(
+        "   DE.POSTDE was added with default settings (gProfiler, hsapiens), edit the written config to adjust organism, methods and background."
+    )
 
 
 def finalize():

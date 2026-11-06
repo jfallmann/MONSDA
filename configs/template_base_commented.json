@@ -3,17 +3,12 @@
     "WORKFLOWS": "Select workflows you want to run, possible values: FETCH, MAPPING, QC, DEDUP, TRIMMING, COUNTING, TRACKS, PEAKS, DE, DEU, DAS, DTU, CIRCS, FUSIONS",
     "BINS": "Where to find the scripts used in the workflow, per default the scripts directory that comes with MONSDA. ONLY CHANGE IF YOU KNOW WHAT YOU ARE DOING!",
     "MAXTHREADS": "Maximum number of cores to use, make sure this fits your needs, acts as upper cap.",
-    "VERSION": "Version of MONSDA to use, needs to match installed version",
-    "POSTDE": "Optional post-DE enrichment/regulatory analysis (GO/GSEA/GSVA/decoupleR/dream). Disabled by default. When enabled, 'config' must point to a PostDE analysis JSON (see configs/postde_analysis.json). Only supported with the DE workflow and the deseq2/edger DE tools."
+    "VERSION": "Version of MONSDA to use, needs to match installed version"
   },
   "WORKFLOWS": "",
   "BINS": "MONSDA/scripts",
   "MAXTHREADS": "",
   "VERSION": "",
-  "POSTDE": {
-    "enabled": false,
-    "config": ""
-  },
   "SETTINGS": {
     "comment": {
       "GROUPS": "Please enter a comma separated list of the groups your samples belong to. This does not have to be in any relation with the condition-tree but is used solely to establish contrasts for differential analysis. Each sample needs a matching entry. Can be left blank to run all-vs-all comparison.",
@@ -515,6 +510,38 @@
     "CUTOFFS": {
       "padj": "0.05",
       "lfc": "1.5"
+    },
+    "POSTDE": {
+      "comment": {
+        "enabled": "Optional post-DE enrichment/regulatory analysis, only with the deseq2/edger DE tools. Writes to POSTDE/<combo>/. Disabled by default.",
+        "padj/lfc": "PostDE significance cutoffs for ORA, independent of CUTOFFS above. GSEA always uses the full ranked list.",
+        "gprofiler": "Online gProfiler enrichment (needs allow_network=true). domain_scope: annotated, known, custom, custom_annotated.",
+        "clusterprofiler": "Local clusterProfiler ORA/GSEA, needs term2gene (and optional term2name), paths relative to the run directory.",
+        "gsva": "GSVA/ssGSEA per contrast, uses clusterprofiler.term2gene gene sets.",
+        "decoupler": "decoupleR ULM/MLM TF/pathway activities.",
+        "dream": "variancePartition dream on raw counts, needs metadata and formula.",
+        "background": "Optional restricted background. All analyses always run on the full tested gene set; if a background is set they are run a second time restricted to it (results in full/ and background/ subfolders). 'file' is a one gene id per line list (relative to the run directory). 'expressed' derives the background from the DE run: metric tpm|cpm|expression (the DE engine's own average expression: DESeq2 baseMean, edgeR logCPM), min = strict cutoff (value > min), min_samples = samples that must pass (default 1), per_group = count per condition group instead of over all samples of the contrast (default true, not for expression). 'combine' (intersect|union) joins file and expressed, include_significant (default true) adds significant genes below the cutoff to the background and logs a warning listing them."
+      },
+      "enabled": false,
+      "padj": 0.05,
+      "lfc": 1,
+      "seed": 42,
+      "min_size": 10,
+      "max_size": 500,
+      "gprofiler": {
+        "enabled": true,
+        "organism": "hsapiens",
+        "domain_scope": "annotated",
+        "allow_network": true,
+        "sources": ["GO:BP", "GO:MF", "GO:CC", "REAC"],
+        "correction_method": "g_SCS"
+      },
+      "background": {
+        "file": null,
+        "expressed": {"metric": "cpm", "min": 1, "min_samples": 2, "per_group": true},
+        "combine": "intersect",
+        "include_significant": true
+      }
     },
     "deseq2": {
       "comment": {

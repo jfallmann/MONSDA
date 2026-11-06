@@ -303,7 +303,7 @@ Includes DE, DEU, DAS and DTU
 PostDE (GO/GSEA/GSVA/decoupleR/dream)
 #####################################
 
-PostDE runs enrichment and regulatory analysis on the results of a DE analysis (DESeq2/edgeR only; DEU/DTU/DAS are not supported). It is configured via the top-level ``POSTDE`` section of the config file, see :ref:`config-file` for the analysis JSON schema and examples.
+PostDE runs enrichment and regulatory analysis on the results of a DE analysis (DESeq2/edgeR only; DEU/DTU/DAS are not supported). It is configured inline in the main config under ``DE.POSTDE``, see :ref:`config-file` for the schema, the background semantics and examples.
 
 Outputs are written under ``POSTDE/<combo>/`` for each DE tool combo:
 
@@ -311,7 +311,9 @@ Outputs are written under ``POSTDE/<combo>/`` for each DE tool combo:
 * ``report_data.rds`` — the full R report data (config, bundle and outputs) for downstream reporting.
 * one subdirectory per contrast with the per-contrast result TSVs (enrichment tables, GSVA scores/differential, decoupler activities/differential, dream results).
 
-GSEA consumes the **full ranked gene list** from the DE analysis — it is never restricted to the significant tables. ORA (gProfiler/clusterProfiler enricher) uses the significant genes defined by the PostDE ``padj``/``lfc`` cutoffs, which are independent of the ``DE.CUTOFFS``; a custom ``background`` file (one gene ID per row, no header) is supported and tested for ORA.
+With a ``background`` configured, each contrast's results split into ``<contrast>/full/`` (all tested genes) and ``<contrast>/background/`` (restricted to the background), plus a ``background_summary.json``; every analysis is run on both gene sets so the restricted results can be compared against the ground truth. Without a background the TSVs land directly in the contrast directory.
+
+GSEA consumes the **full ranked gene list** from the DE analysis — it is never restricted to the significant tables. ORA (gProfiler/clusterProfiler enricher) uses the significant genes defined by the PostDE ``padj``/``lfc`` cutoffs, which are independent of the ``DE.CUTOFFS``; the background (file and/or expression-derived) applies to ORA and is intersected with the tested genes.
 
 GSVA runs per contrast on the cohort and design of that contrast, using the expression matrix captured by the DE analysis (optionally spike-in adjusted when the DE run used spike-in normalization). dream runs on the raw counts with the provided metadata/formula (no condition column in the metadata; the condition comes from the DE analysis). Online gProfiler runs require network consent (``allow_network=true``); the saved queries and provenance are stored alongside the results.
 

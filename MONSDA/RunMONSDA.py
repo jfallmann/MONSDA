@@ -60,6 +60,7 @@ import MONSDA.Params as mp
 import MONSDA.Utils as mu
 import MONSDA.Versions as mv
 import MONSDA.Workflows as mw
+from MONSDA.extras.PostDE import load_postde_config
 
 
 # CODE
@@ -180,13 +181,13 @@ def parseargs():
 def _snakemake_job_command(smko, confo, threads, workdir, rest, pull_apptainer_only, extra_opts=""):
     """Build the shell command for one generated (sub-)Snakefile.
 
-    If pull_apptainer_only is set, route through MONSDA.PullContainers instead
+    If pull_apptainer_only is set, route through MONSDA.extras.PullContainers instead
     of snakemake directly, so only the referenced containers get pulled
     without snakemake also trying (and failing) to create conda envs inside
     them, see --apptainer-create-envs-only.
     """
     if pull_apptainer_only:
-        return f"python3 -m MONSDA.PullContainers -j {threads} -s {smko} --configfile {confo} --directory {workdir} {rest}"
+        return f"python3 -m MONSDA.extras.PullContainers -j {threads} -s {smko} --configfile {confo} --directory {workdir} {rest}"
     return f"snakemake -j {threads} -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs{extra_opts} {rest}"
 
 
@@ -1096,12 +1097,10 @@ def main():
                 + "\n  ".join(option_problems)
             )
 
-        postde_section = config.get("POSTDE")
-        if postde_section is not None:
-            try:
-                mw.load_postde_config(postde_section, config=config)
-            except ValueError as err:
-                sys.exit("POSTDE config invalid: " + str(err))
+        try:
+            load_postde_config(config)
+        except ValueError as err:
+            sys.exit("DE.POSTDE config invalid: " + str(err))
 
         MIN_PYTHON = (3, 11)
         if sys.version_info < MIN_PYTHON:

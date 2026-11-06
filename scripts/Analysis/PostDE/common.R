@@ -227,3 +227,125 @@ postde_gsva_scores <- function(expr, gene_sets, method = "gsva", min_size = 10, 
     }
     GSVA::gsva(param, BPPARAM = BiocParallel::SerialParam())
 }
+
+postde_or <- function(x, default) {
+    if (is.null(x)) default else x
+}
+
+postde_background_active <- function(config) {
+    bg <- config$background
+    is.list(bg) && (!is.null(bg$file) || !is.null(bg$expressed))
+}
+
+postde_expressed_genes <- function(entry, ex) {
+    metric <- ex$metric
+    cutoff <- ex$min
+    if (is.null(metric) || !metric %in% c("tpm", "cpm", "expression")) {
+        stop("background.expressed.metric must be tpm, cpm or expression")
+    }
+    if (!is.numeric(cutoff) || length(cutoff) != 1 || !is.finite(cutoff)) {
+        stop("background.expressed.min must be a single number")
+    }
+    if (metric == "expression") {
+        if (!is.null(ex$min_samples) || !is.null(ex$per_group)) {
+            stop("background.expressed: min_samples/per_group are not available for metric expression")
+        }
+        if (is.null(entry$mean_scale) || !entry$mean_scale %in% c("baseMean", "logCPM")) {
+            stop(paste0("background.expressed.metric=expression needs DE results with an average expression column (entry '", entry$id, "' has mean scale '", entry$mean_scale, "')"))
+        }
+        r <- entry$results
+        return(unique(r$gene_id[is.finite(r$mean) & r$mean > cutoff]))
+    }
+    mat <- entry[[metric]]
+    if (is.null(mat)) {
+        stop(paste0("background.expressed.metric=", metric, " needs the ", metric, " matrix in the DE bundle (entry '", entry$id, "'), rerun the DE step"))
+    }
+    mat <- as.matrix(mat)
+    pass <- mat > cutoff
+    pass[is.na(pass)] <- FALSE
+    min_samples <- postde_or(ex$min_samples, 1)
+    per_group <- isTRUE(postde_or(ex$per_group, TRUE))
+    if (per_group) {
+        cond <- as.character(entry$metadata[colnames(mat), "condition"])
+        ok <- rep(FALSE, nrow(mat))
+        for (cols in split(colnames(mat), cond)) {
+            need <- min(min_samples, length(cols))
+            ok <- ok | rowSums(pass[, cols, drop = FALSE]) >= need
+        }
+    } else {
+        ok <- rowSums(pass) >= min(min_samples, ncol(mat))
+    }
+    unique(rownames(mat)[ok])
+}
+
+postde_build_background <- function(entry, config, outdir) {
+    bg <- config$background
+    tested <- postde_ora_universe(entry$results)
+    file_genes <- NULL
+    expr_genes <- NULL
+    if (!is.null(bg$file)) {
+        file_genes <- unique(as.character(postde_read_tsv(bg$file, header = FALSE)[[1]]))
+    }
+    if (!is.null(bg$expressed)) {
+        expr_genes <- postde_expressed_genes(entry, bg$expressed)
+    }
+    sets <- Filter(Negate(is.null), list(file_genes, expr_genes))
+    combine <- postde_or(bg$combine, "intersect")
+    base <- if (combine == "union") Reduce(union, sets) else Reduce(intersect, sets)
+    final <- intersect(base, tested)
+    sig <- unique(postde_significant(entry$results, direction = "all", padj = config$padj, lfc = config$lfc))
+    below <- setdiff(intersect(sig, tested), final)
+    include_sig <- isTRUE(postde_or(bg$include_significant, TRUE))
+    if (length(below) > 0) {
+        warning(
+            paste0(
+                "postde[", entry$id, "]: ", length(below), " of ", length(sig),
+                " significant genes are not in the expression-derived background (low expression): ",
+                paste(head(below, 20), collapse = ", "), if (length(below) > 20) ", ..." else "",
+                if (include_sig) ". They are added to the background (background.include_significant=true)." else ". They are dropped from the restricted analyses."
+            ),
+            call. = FALSE, immediate. = TRUE
+        )
+        if (include_sig) {
+            final <- union(final, below)
+        }
+    }
+    if (length(final) == 0) {
+        stop(paste0("postde[", entry$id, "]: background is empty after intersecting with the tested genes"))
+    }
+    if (length(final) < 100) {
+        warning(paste0("postde[", entry$id, "]: restricted background has only ", length(final), " genes"), call. = FALSE, immediate. = TRUE)
+    }
+    dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
+    if (!is.null(expr_genes)) {
+        writeLines(sort(expr_genes), file.path(outdir, "background_expressed.tsv"))
+    }
+    writeLines(sort(final), file.path(outdir, "background_final.tsv"))
+    summary <- list(
+        n_tested = length(tested),
+        n_file = if (is.null(file_genes)) NULL else length(file_genes),
+        n_expressed = if (is.null(expr_genes)) NULL else length(expr_genes),
+        n_final = length(final),
+        n_significant = length(sig),
+        n_significant_below_cutoff = length(below),
+        significant_below_cutoff = below,
+        include_significant = include_sig,
+        combine = combine,
+        criteria = bg
+    )
+    jsonlite::write_json(summary, file.path(outdir, "background_summary.json"), pretty = TRUE, auto_unbox = TRUE, null = "null")
+    list(genes = final, summary = summary, dir = outdir)
+}
+
+postde_restrict_entry <- function(entry, genes) {
+    keep <- rownames(entry$results)[rownames(entry$results) %in% genes]
+    if (length(keep) == 0) {
+        stop(paste0("postde[", entry$id, "]: no tested genes left in the restricted background"))
+    }
+    entry$results <- entry$results[keep, , drop = FALSE]
+    entry$expression <- entry$expression[keep, , drop = FALSE]
+    entry$counts <- entry$counts[rownames(entry$counts) %in% genes, , drop = FALSE]
+    entry$cpm <- NULL
+    entry$tpm <- NULL
+    entry
+}

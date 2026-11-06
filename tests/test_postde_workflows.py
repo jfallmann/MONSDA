@@ -16,7 +16,7 @@ from snakemake.common.configfile import load_configfile  # noqa: E402
 
 import MONSDA.Params as mp  # noqa: E402
 import MONSDA.Workflows as mw  # noqa: E402
-from MONSDA.PostDE import load_postde_config, prepare_postde  # noqa: E402
+from MONSDA.extras.PostDE import load_postde_config, prepare_postde  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 DATA = REPO / "tests" / "data"
@@ -67,10 +67,7 @@ def _postde_cfg(tmp_path, analysis, workflows="DE", tools=None):
     cfg["WORKFLOWS"] = workflows
     if tools is not None:
         cfg["DE"]["TOOLS"] = tools
-    cfg["POSTDE"] = {
-        "enabled": True,
-        "config": str(_analysis_config(tmp_path, analysis)),
-    }
+    cfg["DE"]["POSTDE"] = {"enabled": True, **analysis}
     return cfg
 
 
@@ -258,104 +255,180 @@ def postde_r_packages(tmp_path):
     return rscript
 
 
-class TestLoadPostdeConfig:
-    def test_none_returns_none(self):
-        assert load_postde_config(None) is None
+def _cfg_with(section, workflows="DE", tools=None):
+    cfg = _load("config_Test.json")
+    cfg["WORKFLOWS"] = workflows
+    if tools is not None:
+        cfg["DE"]["TOOLS"] = tools
+    if section is not None:
+        cfg["DE"]["POSTDE"] = section
+    return cfg
 
-    def test_disabled_returns_section(self):
-        section = {"enabled": False, "config": ""}
-        assert load_postde_config(section) == section
+
+class TestLoadPostdeConfig:
+    def test_absent_returns_none(self):
+        assert load_postde_config(_cfg_with(None)) is None
+
+    def test_disabled(self):
+        out = load_postde_config(_cfg_with({"enabled": False, "padj": 0.1}))
+        assert out == {"enabled": False, "analysis": {"padj": 0.1}}
+
+    def test_comment_is_ignored(self):
+        out = load_postde_config(_cfg_with({"enabled": True, "comment": {"a": "b"}}))
+        assert out == {"enabled": True, "analysis": {}}
 
     def test_missing_enabled_raises(self):
         with pytest.raises(ValueError, match="enabled"):
-            load_postde_config({"config": ""})
+            load_postde_config(_cfg_with({"padj": 0.1}))
 
     def test_enabled_nonbool_raises(self):
         with pytest.raises(ValueError, match="boolean"):
-            load_postde_config({"enabled": "yes", "config": ""})
+            load_postde_config(_cfg_with({"enabled": "yes"}))
 
-    def test_unknown_section_field_raises(self):
-        with pytest.raises(ValueError, match="unknown fields"):
-            load_postde_config({"enabled": False, "config": "", "enabeld": True})
+    def test_not_an_object_raises(self):
+        with pytest.raises(ValueError, match="object"):
+            load_postde_config(_cfg_with("yes"))
 
-    def test_enabled_missing_config_raises(self):
-        with pytest.raises(ValueError, match="config"):
-            load_postde_config({"enabled": True})
-
-    def test_config_not_found_raises(self):
-        with pytest.raises(ValueError, match="not found"):
-            load_postde_config({"enabled": True, "config": "nope.json"})
-
-    def test_config_invalid_json_raises(self, tmp_path):
-        path = tmp_path / "bad.json"
-        path.write_text("not json")
-        with pytest.raises(ValueError, match="JSON"):
-            load_postde_config({"enabled": True, "config": str(path)})
-
-    def test_unknown_analysis_field_raises(self, tmp_path):
-        path = _analysis_config(tmp_path, {"gprofilerr": {"enabled": True}})
+    def test_legacy_config_key_rejected(self):
         with pytest.raises(ValueError, match="unknown top-level"):
-            load_postde_config({"enabled": True, "config": str(path)})
+            load_postde_config(_cfg_with({"enabled": True, "config": "x.json"}))
 
-    def test_plots_enabled_raises(self, tmp_path):
-        path = _analysis_config(tmp_path, {"plots": {"enabled": True}})
+    def test_unknown_analysis_field_raises(self):
+        with pytest.raises(ValueError, match="unknown top-level"):
+            load_postde_config(
+                _cfg_with({"enabled": True, "gprofilerr": {"enabled": True}})
+            )
+
+    def test_plots_enabled_raises(self):
         with pytest.raises(ValueError, match="not available"):
-            load_postde_config({"enabled": True, "config": str(path)})
+            load_postde_config(_cfg_with({"enabled": True, "plots": {"enabled": True}}))
 
-    def test_gprofiler_requires_organism(self, tmp_path):
-        path = _analysis_config(
-            tmp_path, {"gprofiler": {"enabled": True, "allow_network": True}}
-        )
+    def test_gprofiler_requires_organism(self):
+        sec = {"enabled": True, "gprofiler": {"enabled": True, "allow_network": True}}
         with pytest.raises(ValueError, match="organism"):
-            load_postde_config({"enabled": True, "config": str(path)})
+            load_postde_config(_cfg_with(sec))
 
-    def test_gprofiler_requires_allow_network(self, tmp_path):
-        path = _analysis_config(
-            tmp_path, {"gprofiler": {"enabled": True, "organism": "hsapiens"}}
-        )
+    def test_gprofiler_requires_allow_network(self):
+        sec = {"enabled": True, "gprofiler": {"enabled": True, "organism": "hsapiens"}}
         with pytest.raises(ValueError, match="allow_network"):
-            load_postde_config({"enabled": True, "config": str(path)})
+            load_postde_config(_cfg_with(sec))
 
-    def test_decoupler_requires_network_or_allow_network(self, tmp_path):
-        path = _analysis_config(tmp_path, {"decoupler": {"enabled": True}})
-        with pytest.raises(ValueError, match="allow_network"):
-            load_postde_config({"enabled": True, "config": str(path)})
-
-    def test_missing_resource_raises(self, tmp_path):
-        path = _analysis_config(
-            tmp_path,
-            {"clusterprofiler": {"enabled": True, "term2gene": "missing.tsv"}},
-        )
-        with pytest.raises(ValueError, match="resource file not found"):
-            load_postde_config({"enabled": True, "config": str(path)})
-
-    def test_valid_returns_abs_config(self, tmp_path):
-        (tmp_path / "term2gene.tsv").write_text("term\tgene\nGO:1\tG1\n")
-        analysis = {
-            "clusterprofiler": {"enabled": True, "term2gene": "term2gene.tsv"}
+    def test_gprofiler_background_key_removed(self):
+        sec = {
+            "enabled": True,
+            "gprofiler": {
+                "enabled": True,
+                "organism": "hsapiens",
+                "allow_network": True,
+                "background": "x.tsv",
+            },
         }
-        path = _analysis_config(tmp_path, analysis)
-        out = load_postde_config({"enabled": True, "config": str(path)})
+        with pytest.raises(ValueError, match="unknown fields"):
+            load_postde_config(_cfg_with(sec))
+
+    def test_decoupler_requires_network_or_allow_network(self):
+        with pytest.raises(ValueError, match="allow_network"):
+            load_postde_config(
+                _cfg_with({"enabled": True, "decoupler": {"enabled": True}})
+            )
+
+    def test_missing_resource_raises(self):
+        sec = {
+            "enabled": True,
+            "clusterprofiler": {"enabled": True, "term2gene": "missing.tsv"},
+        }
+        with pytest.raises(ValueError, match="resource file not found"):
+            load_postde_config(_cfg_with(sec))
+
+    def test_missing_background_file_raises(self):
+        sec = {"enabled": True, "background": {"file": "missing.tsv"}}
+        with pytest.raises(ValueError, match="resource file not found"):
+            load_postde_config(_cfg_with(sec))
+
+    def test_valid_resource(self, tmp_path):
+        (tmp_path / "term2gene.tsv").write_text("term\tgene\nGO:1\tG1\n")
+        sec = {
+            "enabled": True,
+            "clusterprofiler": {"enabled": True, "term2gene": "term2gene.tsv"},
+        }
+        out = load_postde_config(_cfg_with(sec))
         assert out["enabled"] is True
-        assert out["config"] == str(path.resolve())
+        assert out["analysis"]["clusterprofiler"]["term2gene"] == "term2gene.tsv"
 
-    def test_no_de_in_workflows_raises(self, tmp_path):
-        cfg = _postde_cfg(tmp_path, {}, workflows="QC")
+    def test_no_de_in_workflows_raises(self):
         with pytest.raises(ValueError, match="DE in WORKFLOWS"):
-            load_postde_config(cfg["POSTDE"], config=cfg)
+            load_postde_config(_cfg_with({"enabled": True}, workflows="QC"))
 
-    def test_unsupported_de_tool_raises(self, tmp_path):
-        cfg = _postde_cfg(
-            tmp_path, {}, tools={"diego": "Analysis/DE/DIEGO.R"}
-        )
+    def test_unsupported_de_tool_raises(self):
+        cfg = _cfg_with({"enabled": True}, tools={"diego": "Analysis/DE/DIEGO.R"})
         with pytest.raises(ValueError, match="does not support"):
-            load_postde_config(cfg["POSTDE"], config=cfg)
+            load_postde_config(cfg)
+
+
+def _bg(**kw):
+    return {"enabled": True, "background": kw}
+
+
+class TestBackgroundValidation:
+    def test_defaults_are_valid(self):
+        from MONSDA.extras.PostDE import POSTDE_DEFAULTS
+
+        out = load_postde_config(_cfg_with(dict(POSTDE_DEFAULTS)))
+        assert out["enabled"] is True
+
+    @pytest.mark.parametrize(
+        "bg,msg",
+        [
+            ({"bogus": 1}, "unknown fields"),
+            ({"combine": "xor"}, "combine"),
+            ({"include_significant": "yes"}, "include_significant"),
+            ({"expressed": {"min": 1}}, "metric"),
+            ({"expressed": {"metric": "fpkm", "min": 1}}, "metric"),
+            ({"expressed": {"metric": "cpm"}}, "min must"),
+            ({"expressed": {"metric": "cpm", "min": -1}}, "min must"),
+            ({"expressed": {"metric": "cpm", "min": 1, "min_samples": 0}}, "min_samples"),
+            ({"expressed": {"metric": "cpm", "min": 1, "min_samples": 1.5}}, "min_samples"),
+            ({"expressed": {"metric": "cpm", "min": 1, "per_group": "y"}}, "per_group"),
+            ({"expressed": {"metric": "cpm", "min": 1, "x": 1}}, "unknown fields"),
+            ({"expressed": {"metric": "expression", "min": 1, "min_samples": 2}}, "expression"),
+            ({"expressed": {"metric": "expression", "min": 1, "per_group": True}}, "expression"),
+        ],
+    )
+    def test_invalid(self, bg, msg):
+        with pytest.raises(ValueError, match=msg):
+            load_postde_config(_cfg_with(_bg(**bg)))
+
+    def test_background_not_object(self):
+        with pytest.raises(ValueError, match="object"):
+            load_postde_config(_cfg_with({"enabled": True, "background": "x"}))
+
+    def test_expression_works_for_both_de_tools(self):
+        sec = _bg(expressed={"metric": "expression", "min": 10})
+        assert (
+            load_postde_config(_cfg_with(sec, tools={"deseq2": "a", "edger": "b"}))[
+                "enabled"
+            ]
+            is True
+        )
+        assert load_postde_config(_cfg_with(sec, tools={"deseq2": "a"}))["enabled"] is True
+
+    @pytest.mark.parametrize("metric", ["tpm", "cpm", "expression"])
+    def test_valid_metrics(self, metric):
+        ex = {"metric": metric, "min": 0.5}
+        if metric != "expression":
+            ex.update(min_samples=2, per_group=False)
+        sec = _bg(
+            expressed=ex,
+            combine="union",
+            include_significant=False,
+        )
+        assert load_postde_config(_cfg_with(sec))["enabled"] is True
 
 
 class TestPreparePostde:
     def test_disabled_returns_none(self, tmp_path):
         cfg = _load("config_Test.json")
-        cfg["POSTDE"] = {"enabled": False, "config": ""}
+        cfg["DE"]["POSTDE"] = {"enabled": False}
         assert prepare_postde(cfg, "SubSnakes") is None
         assert not (tmp_path / "SubSnakes").exists()
 
@@ -394,42 +467,44 @@ class TestPreparePostde:
     def test_relative_resource_paths(self, tmp_path):
         resdir = tmp_path / "res"
         resdir.mkdir()
-        (resdir / "background.tsv").write_text("G1\n")
-        analysis = {
-            "gprofiler": {
-                "enabled": True,
-                "organism": "hsapiens",
-                "allow_network": True,
-                "background": "res/background.tsv",
-            }
-        }
-        cfg = _postde_cfg(tmp_path, analysis)
+        (resdir / "genes.tsv").write_text("G1\n")
+        cfg = _postde_cfg(tmp_path, {"background": {"file": "res/genes.tsv"}})
         staged = prepare_postde(cfg, "SubSnakes")
-        assert os.path.isfile(os.path.join(staged, "gprofiler_background.tsv"))
+        assert os.path.isfile(os.path.join(staged, "background_file.tsv"))
+        staged_cfg = json.load(open(os.path.join(staged, "config.json")))
+        assert staged_cfg["background"]["file"] == "background_file.tsv"
+
+    def test_background_without_file_stages_thresholds(self, tmp_path):
+        bg = {"expressed": {"metric": "cpm", "min": 1}}
+        staged = prepare_postde(_postde_cfg(tmp_path, {"background": bg}), "SubSnakes")
+        staged_cfg = json.load(open(os.path.join(staged, "config.json")))
+        assert staged_cfg["background"] == bg
+
+    def test_threshold_change_new_dir(self, tmp_path):
+        def staged_for(minimum):
+            bg = {"expressed": {"metric": "cpm", "min": minimum}}
+            return prepare_postde(_postde_cfg(tmp_path, {"background": bg}), "SubSnakes")
+
+        assert staged_for(1) != staged_for(2)
+        assert staged_for(1) == staged_for(1)
 
     def test_duplicate_basenames(self, tmp_path):
-        (tmp_path / "background.tsv").write_text("G1\n")
+        (tmp_path / "genes.tsv").write_text("G1\n")
         resdir = tmp_path / "res"
         resdir.mkdir()
-        (resdir / "background.tsv").write_text("G2\n")
+        (resdir / "genes.tsv").write_text("G2\n")
         analysis = {
-            "gprofiler": {
-                "enabled": True,
-                "organism": "hsapiens",
-                "allow_network": True,
-                "background": "background.tsv",
-            },
+            "background": {"file": "genes.tsv"},
             "clusterprofiler": {
                 "enabled": True,
-                "term2gene": "res/background.tsv",
+                "term2gene": "res/genes.tsv",
             },
         }
-        cfg = _postde_cfg(tmp_path, analysis)
-        staged = prepare_postde(cfg, "SubSnakes")
+        staged = prepare_postde(_postde_cfg(tmp_path, analysis), "SubSnakes")
         names = sorted(os.listdir(staged))
-        assert "gprofiler_background.tsv" in names
+        assert "background_file.tsv" in names
         assert "clusterprofiler_term2gene.tsv" in names
-        assert "background.tsv" not in names
+        assert "genes.tsv" not in names
 
     def test_content_change_new_dir(self, tmp_path):
         (tmp_path / "term2gene.tsv").write_text("term\tgene\nGO:1\tG1\n")
@@ -488,8 +563,8 @@ class TestWorkflowIntegration:
         confo = json.load(
             open(workdir / subdir / "allconditions_DE_deseq2_subconfig.json")
         )
-        assert confo["POSTDE"]["enabled"] is True
-        assert confo["POSTDE"]["inputs"].startswith(
+        assert confo["DE"]["POSTDE"]["enabled"] is True
+        assert confo["DE"]["POSTDE"]["inputs"].startswith(
             os.path.abspath("SubSnakes") + os.sep + "POSTDE_"
         )
         smk = (workdir / subdir / "allconditions_DE_deseq2_subsnake.smk").read_text()
@@ -512,8 +587,8 @@ class TestWorkflowIntegration:
         confo = json.load(
             open(workdir / subdir / "allconditions_DE_deseq2_subconfig.json")
         )
-        assert confo["POSTDE"]["enabled"] is True
-        assert confo["POSTDE"]["inputs"].startswith(
+        assert confo["DE"]["POSTDE"]["enabled"] is True
+        assert confo["DE"]["POSTDE"]["inputs"].startswith(
             os.path.abspath("SubFlows") + os.sep + "POSTDE_"
         )
         nf = (workdir / subdir / "allconditions_DE_deseq2_subflow.nf").read_text()
@@ -527,12 +602,12 @@ class TestWorkflowIntegration:
 
     def test_disabled_no_postde(self, workdir, tmp_path):
         cfg = _load("config_Test.json")
-        cfg["POSTDE"] = {"enabled": False, "config": ""}
+        cfg["DE"]["POSTDE"] = {"enabled": False}
         subdir = _generate_de("smk", workdir, cfg)
         confo = json.load(
             open(workdir / subdir / "allconditions_DE_deseq2_subconfig.json")
         )
-        assert "POSTDE" not in confo
+        assert "POSTDE" not in confo.get("DE", {})
         smk = (workdir / subdir / "allconditions_DE_deseq2_subsnake.smk").read_text()
         assert "MONSDA_POSTDE={postde_flag}" in smk
         base = [
@@ -565,9 +640,6 @@ class TestWorkflowIntegration:
         }
         cfg = _postde_cfg(tmp_path, analysis)
         subdir = _generate_de("smk", workdir, cfg)
-        confo = json.load(
-            open(workdir / subdir / "allconditions_DE_deseq2_subconfig.json")
-        )
         bundle = workdir / "DE" / "deseq2_DE" / "DE_deseq2__postde.rds"
         bundle.parent.mkdir(parents=True, exist_ok=True)
         bundle.write_bytes(b"fake")
@@ -604,7 +676,7 @@ class TestNfProcessBody:
         confo = json.load(
             open(workdir / subdir / "allconditions_DE_deseq2_subconfig.json")
         )
-        staged = confo["POSTDE"]["inputs"]
+        staged = confo["DE"]["POSTDE"]["inputs"]
         subflow = (workdir / subdir / "allconditions_DE_deseq2_subflow.nf").read_text()
         script = _extract_nf_script(subflow, "postde")
         # simulate nextflow rendering of the escaped shell variables
@@ -717,8 +789,8 @@ class TestPostdeExecutable:
         confo = json.load(
             open(workdir / subdir / f"allconditions_DE_{detool}_subconfig.json")
         )
-        assert confo["POSTDE"]["enabled"] is True
-        staged = Path(confo["POSTDE"]["inputs"])
+        assert confo["DE"]["POSTDE"]["enabled"] is True
+        staged = Path(confo["DE"]["POSTDE"]["inputs"])
         launch = workdir / "launch dir"
         launch.mkdir()
         bundle = _write_real_bundle(rscript, launch, detool)
@@ -811,10 +883,7 @@ class TestCliSave:
         cfg = _load("config_Test.json")
         cfg["VERSION"] = version
         cfg["WORKFLOWS"] = "DE"
-        cfg["POSTDE"] = {
-            "enabled": True,
-            "config": str(_analysis_config(tmp_path, {"padj": 0.05, "lfc": 1})),
-        }
+        cfg["DE"]["POSTDE"] = {"enabled": True, "padj": 0.05, "lfc": 1}
         (tmp_path / "config_Test.json").write_text(json.dumps(cfg))
         env = {**os.environ, "PYTHONPATH": str(REPO) + os.pathsep + str(tmp_path)}
         cmd = [
@@ -841,8 +910,8 @@ class TestCliSave:
         assert result.returncode == 0, result.stderr[-2000:]
         subdir = tmp_path / ("SubFlows" if engine == "nf" else "SubSnakes")
         confo = json.load(open(subdir / "allconditions_DE_deseq2_subconfig.json"))
-        assert confo["POSTDE"]["enabled"] is True
-        staged = confo["POSTDE"]["inputs"]
+        assert confo["DE"]["POSTDE"]["enabled"] is True
+        staged = confo["DE"]["POSTDE"]["inputs"]
         assert (tmp_path / staged / "config.json").exists()
         commands = (tmp_path / "JOBS" / "MONSDA.commands").read_text()
         if engine == "nf":

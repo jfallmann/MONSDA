@@ -121,9 +121,9 @@ Keep in mind that every workflow step needs a corresponding entry in the config 
 PostDE (GO/GSEA/GSVA/decoupleR/dream)
 =====================================
 
-PostDE is an optional post-processing step that runs enrichment (GO/GSEA via gProfiler or clusterProfiler), gene-set variation analysis (GSVA) and regulatory inference (decoupleR ULM/MLM, variancePartition dream) on the results of a DE analysis. It is **disabled by default** and only supported together with the **DE** workflow and the **deseq2**/**edger** DE tools (DEU/DTU/DAS are not supported).
+PostDE is an optional post-processing step that runs enrichment (GO/GSEA via gProfiler or clusterProfiler), gene-set variation analysis (GSVA) and regulatory inference (decoupler ULM/MLM, variancePartition dream) on the results of a DE analysis. It is **disabled by default** and only supported together with the **DE** workflow and the **deseq2**/**edger** DE tools (DEU/DTU/DAS are not supported).
 
-Enable it in the top-level of the config file, next to ``WORKFLOWS``, ``DE`` and the DE ``TOOLS`` (which stay unchanged):
+It is configured inline in the main config under the ``DE`` key, as ``DE.POSTDE`` — there is no separate analysis JSON any more. A legacy top-level ``POSTDE`` key or a ``config`` file reference is rejected at startup.
 
 .. code-block:: json
 
@@ -133,51 +133,63 @@ Enable it in the top-level of the config file, next to ``WORKFLOWS``, ``DE`` and
         "TOOLS": {
           "deseq2": "Analysis/DE/DESEQ2.R",
           "edger": "Analysis/DE/EDGER.R"
+        },
+        "POSTDE": {
+          "enabled": true,
+          "padj": 0.05,
+          "lfc": 1,
+          "gprofiler": {
+            "enabled": true,
+            "organism": "hsapiens",
+            "allow_network": true
+          },
+          "background": {
+            "expressed": {
+              "metric": "cpm",
+              "min": 1,
+              "min_samples": 2,
+              "per_group": true
+            },
+            "combine": "intersect",
+            "include_significant": true
+          }
         }
-      },
-      "POSTDE": {
-        "enabled": true,
-        "config": "/abs/path/to/postde_analysis.json"
       }
     }
 
-The ``POSTDE.config`` path is resolved relative to the **run working directory** (the directory you launch ``monsda`` from). Resource files referenced inside the analysis JSON (``term2gene``, ``background``, ``network``, ``metadata``) are resolved relative to the directory of the analysis JSON itself. The analysis JSON is validated at startup and again when the DE sub-workflow is prepared; an invalid config aborts the run with a clear error.
+The section is validated when the run starts and again when the DE sub-workflow is prepared; an invalid config aborts with a clear error. Relative resource paths are resolved against the **run working directory** (the directory you launch ``monsda`` from), not the config file's directory. Resource files are staged into the PostDE working directory (e.g. a background list becomes ``background_file.tsv``), so the staged run is reproducible and a changed threshold or file produces a new working directory.
 
-Analysis JSON schema
---------------------
+Options
+-------
 
-The analysis JSON supports the following top-level keys (all optional unless noted):
-
-.. code-block:: json
-
-    {
-      "padj": 0.05,
-      "lfc": 1,
-      "seed": 1,
-      "min_size": 10,
-      "max_size": 500,
-      "gprofiler": { "enabled": false },
-      "clusterprofiler": { "enabled": false },
-      "gsva": { "enabled": false },
-      "decoupler": { "enabled": false },
-      "dream": { "enabled": false },
-      "plots": { "enabled": false },
-      "report": { "enabled": false },
-      "shiny": { "enabled": false }
-    }
-
-Defaults (read from the actual R implementation): ``padj=0.05``, ``lfc=1``, ``seed=1``, ``min_size=10``, ``max_size=500``. ``padj``/``lfc`` are the PostDE significance cutoffs used to define the significant gene sets for ORA; they are **independent of** the ``DE.CUTOFFS`` in the DE section. GSEA always consumes the **full ranked gene list** and is never filtered by ``padj``/``lfc``.
+Top-level keys (all optional): ``padj`` (default 0.05), ``lfc`` (default 1), ``seed`` (default 1), ``min_size`` (default 10), ``max_size`` (default 500), one block per method, and ``background``. ``padj``/``lfc`` are the PostDE significance cutoffs used to define the significant gene sets for ORA; they are **independent of** the ``DE.CUTOFFS`` in the DE section. GSEA always consumes the **full ranked gene list** and is never filtered by ``padj``/``lfc``.
 
 Per-method keys:
 
-* ``gprofiler``: ``enabled``, ``organism`` (required when enabled, e.g. ``hsapiens``), ``domain_scope`` (``annotated``, ``known``, ``custom``, ``custom_annotated``; default ``custom``), ``allow_network`` (required ``true``, gost is an online call), ``sources`` (list, e.g. ``["GO:BP", "GO:MF", "GO:CC", "REAC"]``; default all), ``correction_method`` (default ``g_SCS``), ``background`` (optional file, one gene ID per row, no header).
-* ``clusterprofiler``: ``enabled``, ``term2gene`` (required when clusterprofiler or gsva is enabled), ``term2name`` (optional), ``go_expand`` (optional boolean, builds a GO map via ``buildGOmap``), ``background`` (optional file, one gene ID per row, no header).
+* ``gprofiler``: ``enabled``, ``organism`` (required when enabled, e.g. ``hsapiens``), ``domain_scope`` (``annotated``, ``known``, ``custom``, ``custom_annotated``; default ``custom``), ``allow_network`` (required ``true``, gost is an online call), ``sources`` (list, e.g. ``["GO:BP", "GO:MF", "GO:CC", "REAC"]``; default all), ``correction_method`` (default ``g_SCS``).
+* ``clusterprofiler``: ``enabled``, ``term2gene`` (required when clusterprofiler or gsva is enabled), ``term2name`` (optional), ``go_expand`` (optional boolean, builds a GO map via ``buildGOmap``).
 * ``gsva``: ``enabled``, ``method`` (``gsva`` or ``ssgsea``; default ``gsva``), ``min_size``/``max_size`` (default to the top-level values).
 * ``decoupler``: ``enabled``, ``network`` (offline network file) **or** ``allow_network`` (retrieve from OmniPath), ``source_col``/``target_col``/``mor_col`` (default ``source``/``target``/``mor``), ``resource`` (``collectri`` or ``progeny``; default ``collectri``), ``organism`` (default ``human``), ``top`` (PROGENy top pathways, default ``500``), ``min_size`` (default top-level), ``methods`` (``ulm`` and/or ``mlm``; default both), ``contrast_activity`` (optional boolean).
 * ``dream``: ``enabled``, ``metadata`` (required when enabled; TSV with a ``sample`` column, **no** ``condition`` column), ``formula`` (required when enabled, must include a random effect, e.g. ``~condition + (1|subject)``), ``contrasts`` (optional).
 * ``plots``/``report``/``shiny``: only ``enabled``; setting ``enabled=true`` is rejected because the HTML reporting layer is not provided yet.
 
-A ready-to-use online example (human) is shipped as ``configs/postde_analysis.json`` in the repository. It enables gProfiler with ``organism=hsapiens``, ``domain_scope=custom``, ``allow_network=true`` and the sources ``GO:BP``, ``GO:MF``, ``GO:CC``, ``REAC``; all other methods are disabled and no resource files are required. Change the organism for non-human data — the example is not universal.
+Per-method ``background`` keys do not exist; the background is configured once, globally (see below).
+
+Background
+----------
+
+Without a ``background`` block every analysis runs once on the full tested gene set and results are written directly into the contrast directory. With a background set, **every** PostDE analysis (gProfiler, clusterProfiler/GSEA, GSVA, decoupleR, dream) is run twice: once on the full tested gene set and once restricted to the background, so the restricted results can be compared against the ground truth. Outputs then land in ``<contrast>/full/`` and ``<contrast>/background/``, next to a ``background_summary.json`` per contrast. Expect roughly **twice the runtime**.
+
+The background is the intersection of the configured sources with the genes actually tested:
+
+* ``file``: a gene list, one gene ID per line, no header, relative to the run working directory.
+* ``expressed``: derived from the DE run itself. ``metric`` is ``tpm``, ``cpm`` or ``expression`` with a strict ``>`` cutoff ``min``; ``min_samples`` (default 1) requires the gene to pass in at least that many samples; ``per_group`` (default true) counts per condition group of the contrast instead of over all samples. ``tpm``/``cpm`` are computed from the raw counts with spike-in control genes removed. ``expression`` uses the DE engine's own average-expression column — DESeq2 ``baseMean`` or edgeR ``logCPM`` — so it also works when both engines are enabled, but the same ``min`` means different things per engine (raw scale vs log2 scale). ``tpm`` uses the full gene span from the GTF, so absolute cutoffs are only approximate; ``cpm`` is the robust default.
+* ``combine``: ``intersect`` (default) or ``union`` of ``file`` and ``expressed``.
+* ``include_significant`` (default true): significant genes below the cutoff are still added to the background and a warning lists them. Set it to ``false`` to drop them.
+
+An empty background is an error; a background smaller than 100 genes logs a warning.
+
+For the restricted gProfiler run, ``domain_scope`` ``annotated``/``known`` is mapped to ``custom_annotated``/``custom`` automatically, since a custom universe requires a custom domain scope.
 
 Offline example (clusterProfiler + GSVA)
 ----------------------------------------
@@ -191,38 +203,34 @@ For offline runs (no gProfiler network access) use clusterProfiler/GSVA with a c
     GO:0008150   GENE2
     GO:0009987   GENE1
 
-An optional ``term2name`` file has the header ``term`` and ``name``; an optional ``background`` file has one gene ID per row and no header. A decoupler ``network`` file has the columns ``source``, ``target``, ``mor``; a dream ``metadata`` file has a ``sample`` column and no ``condition`` column.
+An optional ``term2name`` file has the header ``term`` and ``name``; a background ``file`` has one gene ID per row and no header. A decoupler ``network`` file has the columns ``source``, ``target``, ``mor``; a dream ``metadata`` file has a ``sample`` column and no ``condition`` column.
 
 .. code-block:: json
 
     {
-      "padj": 0.05,
-      "lfc": 1,
-      "seed": 42,
-      "min_size": 10,
-      "max_size": 500,
-      "clusterprofiler": {
-        "enabled": true,
-        "term2gene": "term2gene.tsv",
-        "term2name": "term2name.tsv",
-        "background": "background.txt"
-      },
-      "gsva": {
-        "enabled": true,
-        "method": "gsva"
-      },
-      "gprofiler": { "enabled": false },
-      "decoupler": { "enabled": false },
-      "dream": { "enabled": false },
-      "plots": { "enabled": false },
-      "report": { "enabled": false },
-      "shiny": { "enabled": false }
+      "DE": {
+        "POSTDE": {
+          "enabled": true,
+          "padj": 0.05,
+          "lfc": 1,
+          "seed": 42,
+          "min_size": 10,
+          "max_size": 500,
+          "clusterprofiler": {
+            "enabled": true,
+            "term2gene": "term2gene.tsv",
+            "term2name": "term2name.tsv"
+          },
+          "gsva": { "enabled": true, "method": "gsva" },
+          "background": { "file": "background.txt" }
+        }
+      }
     }
 
 Running PostDE
 --------------
 
-From a populated project root (raw BAMs and a completed DE run are prerequisites, see the DE section of the :ref:`Workflow Overview<WFoverview>`), with the root ``POSTDE`` path enabled and the config ``VERSION`` matching the installed MONSDA version:
+From a populated project root (raw BAMs and a completed DE run are prerequisites, see the DE section of the :ref:`Workflow Overview<WFoverview>`), with ``DE.POSTDE`` enabled and the config ``VERSION`` matching the installed MONSDA version:
 
 .. code-block:: bash
 
@@ -235,4 +243,4 @@ Environment
 
 The PostDE R code needs the ``postde`` conda environment (``envs/postde.yaml`` in the repository). A container recipe exists (``containers/apptainer/postde.def``) and builds from that environment file, but no image is published yet — prefer the conda route until a local/cluster container build is available.
 
-The interactive Configurator (``monsda_configure``) can enable PostDE when creating or modifying a config: it asks for the analysis JSON path when the DE workflow is active, and the modify menu offers a dedicated *configure PostDE* option. The web Configurator exposes the same option as a checkbox next to the workflow selection.
+The interactive Configurator (``monsda_configure``) can enable PostDE when creating or modifying a config: with the DE workflow active it offers a yes/no question and writes the default ``DE.POSTDE`` block (or keeps the existing one when modifying); the modify menu has a dedicated *configure PostDE* option. The web Configurator exposes the same option as a checkbox next to the workflow selection.

@@ -9,6 +9,7 @@ source(file.path(postde_dir, "common.R"))
 source(file.path(postde_dir, "export.R"))
 source(file.path(postde_dir, "enrichment.R"))
 source(file.path(postde_dir, "regulatory.R"))
+source(file.path(script_dir, "..", "scripts", "lib", "_lib.R"))
 
 suppressPackageStartupMessages({
     library(DESeq2)
@@ -65,12 +66,14 @@ summary$edger_stat_na_noF <- all(is.na(qlf_df$stat[!is.finite(qlf$table$F)]))
 
 ## capture bundles (deseq2 and edger separately)
 postde_bundles <- list()
+postde_entry_ids <- character()
 postde_capture(engine = "deseq2", id = "A_vs_B", A = "A", B = "B", normalized = FALSE, metadata = metadata, counts = counts, expression = assay(vsd), formula = ~condition, results = res_df, mean_scale = "baseMean")
 postde_write(outdir, "test", "deseq2")
 deseq2_bundle <- readRDS(file.path(outdir, "DE_deseq2_test_postde.rds"))
 deseq2_entry <- deseq2_bundle$contrasts[["A_vs_B"]]
 
 postde_bundles <- list()
+postde_entry_ids <- character()
 postde_capture(engine = "edger", id = "A_vs_B", A = "A", B = "B", normalized = FALSE, metadata = metadata, counts = counts, expression = cpm(dge, log = TRUE), formula = ~condition, results = qlf_df, mean_scale = "logCPM")
 postde_write(outdir, "test", "edger")
 edger_bundle <- readRDS(file.path(outdir, "DE_edger_test_postde.rds"))
@@ -87,6 +90,7 @@ summary$capture_rejects_misaligned <- inherits(tryCatch(
 ## counts superset allowed: counts with extra genes
 extra_counts <- rbind(counts, matrix(1, nrow = 5, ncol = 8, dimnames = list(paste0("extra", 1:5), samples)))
 postde_bundles <- list()
+postde_entry_ids <- character()
 postde_capture(engine = "deseq2", id = "superset", A = "A", B = "B", normalized = FALSE, metadata = metadata, counts = extra_counts, expression = assay(vsd), formula = ~condition, results = res_df, mean_scale = "baseMean")
 summary$capture_counts_superset_ok <- length(postde_bundles) == 1
 
@@ -318,6 +322,103 @@ summary$sanitize_collision_detected <- inherits(tryCatch(
     postde_check_sanitized_ids(c("a/b", "a_b")),
     error = function(e) e
 ), "error")
+
+## background: expressed genes from a known cpm matrix
+bg_samples <- paste0("b", 1:4)
+bg_genes <- paste0("g", 1:6)
+bg_cpm <- rbind(
+    g1 = c(5, 5, 5, 5),
+    g2 = c(5, 5, 0, 0),
+    g3 = c(1, 1, 1, 1),
+    g4 = c(1.5, 0, 0, 0),
+    g5 = c(NA, NA, NA, NA),
+    g6 = c(0.2, 0.2, 0.2, 0.2)
+)
+colnames(bg_cpm) <- bg_samples
+bg_meta <- data.frame(condition = factor(c("B", "B", "A", "A")), row.names = bg_samples)
+bg_results <- data.frame(
+    gene_id = bg_genes,
+    logFC = c(0.1, 0.1, 0.1, 0.1, NA, 3),
+    pvalue = c(0.5, 0.5, 0.5, 0.5, NA, 0.0001),
+    padj = c(0.9, 0.9, 0.9, 0.9, NA, 0.001),
+    stat = c(0, 0, 0, 0, NA, 4),
+    mean = c(100, 50, 10, 5, 0, 2),
+    row.names = bg_genes,
+    stringsAsFactors = FALSE
+)
+bg_entry <- list(
+    id = "bg", results = bg_results, cpm = bg_cpm, tpm = bg_cpm * 2, metadata = bg_meta,
+    counts = matrix(1, nrow = 6, ncol = 4, dimnames = list(bg_genes, bg_samples)),
+    expression = matrix(1, nrow = 6, ncol = 4, dimnames = list(bg_genes, bg_samples)),
+    mean_scale = "baseMean"
+)
+ex_genes <- function(...) sort(postde_expressed_genes(bg_entry, list(metric = "cpm", ...)))
+summary$bg_strict_greater <- identical(ex_genes(min = 1, min_samples = 1, per_group = TRUE), c("g1", "g2", "g4"))
+summary$bg_min_samples_2 <- identical(ex_genes(min = 1, min_samples = 2, per_group = TRUE), c("g1", "g2"))
+summary$bg_per_group_true <- identical(ex_genes(min = 1, min_samples = 3, per_group = TRUE), c("g1", "g2"))
+summary$bg_per_group_false <- identical(ex_genes(min = 1, min_samples = 3, per_group = FALSE), "g1")
+summary$bg_tpm_metric <- identical(sort(postde_expressed_genes(bg_entry, list(metric = "tpm", min = 1.2, min_samples = 1, per_group = FALSE))), c("g1", "g2", "g3", "g4"))
+summary$bg_na_never_expressed <- !"g5" %in% ex_genes(min = 0, min_samples = 1, per_group = FALSE)
+summary$bg_expression_deseq2 <- identical(sort(postde_expressed_genes(bg_entry, list(metric = "expression", min = 10))), c("g1", "g2"))
+logcpm_entry <- bg_entry
+logcpm_entry$mean_scale <- "logCPM"
+summary$bg_expression_edger <- identical(sort(postde_expressed_genes(logcpm_entry, list(metric = "expression", min = 10))), c("g1", "g2"))
+unknown_scale_entry <- bg_entry
+unknown_scale_entry$mean_scale <- "avgExpr"
+summary$bg_expression_unknown_scale_rejected <- inherits(tryCatch(postde_expressed_genes(unknown_scale_entry, list(metric = "expression", min = 1)), error = function(e) e), "error")
+summary$bg_expression_rejects_min_samples <- inherits(tryCatch(postde_expressed_genes(bg_entry, list(metric = "expression", min = 1, min_samples = 2)), error = function(e) e), "error")
+no_tpm_entry <- bg_entry
+no_tpm_entry$tpm <- NULL
+summary$bg_missing_matrix_rejected <- inherits(tryCatch(postde_expressed_genes(no_tpm_entry, list(metric = "tpm", min = 1)), error = function(e) e), "error")
+
+bg_dir <- file.path(outdir, "bg_build")
+bg_file <- file.path(outdir, "bg_genes.tsv")
+writeLines(c("g1", "g3", "g5", "zz"), bg_file)
+bg_cfg <- list(padj = 0.05, lfc = 1, background = list(expressed = list(metric = "cpm", min = 1, min_samples = 2, per_group = TRUE), combine = "intersect", include_significant = TRUE))
+bg_warnings <- character()
+bg_out <- withCallingHandlers(
+    postde_build_background(bg_entry, bg_cfg, bg_dir),
+    warning = function(w) {
+        bg_warnings <<- c(bg_warnings, conditionMessage(w))
+        invokeRestart("muffleWarning")
+    }
+)
+summary$bg_include_significant_added <- identical(sort(bg_out$genes), c("g1", "g2", "g6"))
+summary$bg_warning_lists_significant <- any(grepl("g6", bg_warnings) & grepl("significant genes", bg_warnings))
+bg_sum <- fromJSON(file.path(bg_dir, "background_summary.json"))
+summary$bg_summary_counts <- bg_sum$n_final == 3 && bg_sum$n_significant_below_cutoff == 1 && bg_sum$significant_below_cutoff == "g6"
+summary$bg_files_written <- all(file.exists(file.path(bg_dir, c("background_expressed.tsv", "background_final.tsv", "background_summary.json"))))
+bg_cfg_drop <- bg_cfg
+bg_cfg_drop$background$include_significant <- FALSE
+bg_drop <- suppressWarnings(postde_build_background(bg_entry, bg_cfg_drop, file.path(outdir, "bg_drop")))
+summary$bg_exclude_significant <- identical(sort(bg_drop$genes), c("g1", "g2"))
+bg_cfg_file <- bg_cfg
+bg_cfg_file$background$file <- bg_file
+bg_cfg_file$background$include_significant <- FALSE
+bg_inter <- suppressWarnings(postde_build_background(bg_entry, bg_cfg_file, file.path(outdir, "bg_inter")))
+summary$bg_intersect_file_expressed_tested <- identical(sort(bg_inter$genes), "g1")
+bg_cfg_file$background$combine <- "union"
+bg_union <- suppressWarnings(postde_build_background(bg_entry, bg_cfg_file, file.path(outdir, "bg_union")))
+summary$bg_union_limited_to_tested <- identical(sort(bg_union$genes), c("g1", "g2", "g3"))
+bg_cfg_empty <- bg_cfg_drop
+bg_cfg_empty$background$expressed$min <- 1000
+summary$bg_empty_rejected <- inherits(tryCatch(suppressWarnings(postde_build_background(bg_entry, bg_cfg_empty, file.path(outdir, "bg_empty"))), error = function(e) e), "error")
+summary$bg_active_detection <- postde_background_active(list(background = list(expressed = list(metric = "cpm", min = 1)))) &&
+    !postde_background_active(list()) && !postde_background_active(list(background = list(combine = "union")))
+
+restricted <- postde_restrict_entry(bg_entry, c("g1", "g6"))
+summary$bg_restrict_entry <- identical(rownames(restricted$results), c("g1", "g6")) &&
+    identical(rownames(restricted$expression), c("g1", "g6")) &&
+    identical(rownames(restricted$counts), c("g1", "g6")) &&
+    is.null(restricted$cpm) && is.null(restricted$tpm)
+summary$bg_restrict_empty_rejected <- inherits(tryCatch(postde_restrict_entry(bg_entry, "nope"), error = function(e) e), "error")
+
+## export captures cpm for expressed-gene backgrounds
+postde_bundles <- list()
+postde_entry_ids <- character()
+postde_capture(engine = "deseq2", id = "cpmcheck", A = "A", B = "B", normalized = FALSE, metadata = metadata, counts = counts, expression = assay(vsd), formula = ~condition, results = res_df, mean_scale = "baseMean", gtf = data.frame(gene_id = rownames(counts), width = 1000))
+cpm_entry <- postde_bundles[[1]]
+summary$capture_cpm_matches <- isTRUE(all.equal(cpm_entry$cpm, calc_cpm(counts), check.attributes = FALSE)) && identical(dim(cpm_entry$tpm), dim(counts))
 
 writeLines(toJSON(summary, auto_unbox = TRUE, pretty = TRUE), file.path(outdir, "summary.json"))
 cat("POSTDE_FIXTURE_OK", outdir, "\n")

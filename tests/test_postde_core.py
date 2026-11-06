@@ -50,6 +50,29 @@ REQUIRED_SUMMARY_CHECKS = [
     "design_zero_intercept_rejected",
     "sanitize_dot_rejected",
     "sanitize_collision_detected",
+    "bg_strict_greater",
+    "bg_min_samples_2",
+    "bg_per_group_true",
+    "bg_per_group_false",
+    "bg_tpm_metric",
+    "bg_na_never_expressed",
+    "bg_expression_deseq2",
+    "bg_expression_edger",
+    "bg_expression_unknown_scale_rejected",
+    "bg_expression_rejects_min_samples",
+    "bg_missing_matrix_rejected",
+    "bg_include_significant_added",
+    "bg_warning_lists_significant",
+    "bg_summary_counts",
+    "bg_files_written",
+    "bg_exclude_significant",
+    "bg_intersect_file_expressed_tested",
+    "bg_union_limited_to_tested",
+    "bg_empty_rejected",
+    "bg_active_detection",
+    "bg_restrict_entry",
+    "bg_restrict_empty_rejected",
+    "capture_cpm_matches",
 ]
 
 
@@ -158,6 +181,87 @@ def test_run_cli_end_to_end(fixture_dir, tmp_path):
     assert (out / "A_vs_B" / "decoupler_mlm_activities.tsv").exists()
     assert (out / "A_vs_B" / "gsea_result.tsv").exists()
     assert (out / "report_data.rds").exists()
+
+
+def _background_config(fixture_dir, background):
+    return {
+        "padj": 0.99,
+        "lfc": 0,
+        "min_size": 1,
+        "max_size": 500,
+        "seed": 1,
+        "background": background,
+        "clusterprofiler": {
+            "enabled": True,
+            "term2gene": str(fixture_dir / "term2gene.tsv"),
+            "term2name": str(fixture_dir / "term2name.tsv"),
+        },
+        "decoupler": {
+            "enabled": True,
+            "network": str(fixture_dir / "test_network.tsv"),
+            "min_size": 1,
+            "methods": ["ulm"],
+        },
+    }
+
+
+def test_run_cli_background_full_and_restricted(fixture_dir, tmp_path):
+    config = _background_config(
+        fixture_dir,
+        {"expressed": {"metric": "expression", "min": 50}, "include_significant": True},
+    )
+    config_path = _write_config(tmp_path / "config.json", config)
+    out = tmp_path / "out"
+    res = run_rscript(
+        [
+            POSTDE_DIR / "run.R",
+            "--bundle",
+            fixture_dir / "DE_deseq2_test_postde.rds",
+            "--config",
+            config_path,
+            "--output",
+            out,
+        ]
+    )
+    assert res.returncode == 0
+    entry_dir = out / "A_vs_B"
+    for sub in ("full", "background"):
+        assert (entry_dir / sub / "enricher_all_result.tsv").exists(), sub
+        assert (entry_dir / sub / "decoupler_ulm_activities.tsv").exists(), sub
+        assert (entry_dir / sub / "gsea_result.tsv").exists(), sub
+    assert not (entry_dir / "enricher_all_result.tsv").exists()
+    for name in ("background_expressed.tsv", "background_final.tsv", "background_summary.json"):
+        assert (entry_dir / "background" / name).exists(), name
+    summary = json.loads((entry_dir / "background" / "background_summary.json").read_text())
+    full_genes = (entry_dir / "background" / "background_final.tsv").read_text().split()
+    assert summary["n_final"] == len(full_genes) > 0
+    assert summary["n_final"] < summary["n_tested"]
+    manifest = json.loads((out / "manifest.json").read_text())
+    entry = manifest["entries"]["A_vs_B"]
+    assert entry["analyses"]["full"]["enrichment"]["enricher_all"]["result"] == "A_vs_B/full/enricher_all_result.tsv"
+    assert entry["analyses"]["background"]["enrichment"]["enricher_all"]["result"] == "A_vs_B/background/enricher_all_result.tsv"
+    assert entry["analyses"]["background_info"]["final"] == "A_vs_B/background/background_final.tsv"
+
+
+def test_run_cli_background_missing_cpm_matrix(fixture_dir, tmp_path):
+    config = _background_config(
+        fixture_dir, {"expressed": {"metric": "cpm", "min": 1}}
+    )
+    config_path = _write_config(tmp_path / "config.json", config)
+    res = run_rscript(
+        [
+            POSTDE_DIR / "run.R",
+            "--bundle",
+            fixture_dir / "DE_deseq2_test_postde.rds",
+            "--config",
+            config_path,
+            "--output",
+            tmp_path / "out",
+        ],
+        check=False,
+    )
+    assert res.returncode != 0
+    assert "rerun the DE step" in res.stderr
 
 
 def test_gprofiler_requires_allow_network(fixture_dir, tmp_path):

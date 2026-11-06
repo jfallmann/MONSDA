@@ -69,6 +69,9 @@ postde_validate_config <- function(config) {
             stop(paste0("config ", sub, ".enabled must be a boolean"))
         }
     }
+    if (!is.null(config$background) && !is.list(config$background)) {
+        stop("config background must be an object")
+    }
     invisible(TRUE)
 }
 
@@ -157,15 +160,35 @@ postde_main <- function() {
         }
         entry_dir <- file.path(cli$output, postde_sanitize_id(entry$id))
         dir.create(entry_dir, recursive = TRUE, showWarnings = FALSE)
-        entry_outputs <- list()
-        if (postde_config_enabled(config$gprofiler)) {
-            entry_outputs$gprofiler <- postde_run_gprofiler(entry, config, entry_dir)
+        run_analyses <- function(ent, dir, restricted) {
+            res <- list()
+            if (postde_config_enabled(config$gprofiler)) {
+                res$gprofiler <- postde_run_gprofiler(ent, config, dir, restricted = restricted)
+            }
+            if (postde_config_enabled(config$clusterprofiler) || postde_config_enabled(config$gsva)) {
+                res$enrichment <- postde_run_enrichment(ent, config, dir)
+            }
+            if (postde_config_enabled(config$decoupler) || postde_config_enabled(config$dream)) {
+                res$regulatory <- postde_run_regulatory(ent, config, dir)
+            }
+            res
         }
-        if (postde_config_enabled(config$clusterprofiler) || postde_config_enabled(config$gsva)) {
-            entry_outputs$enrichment <- postde_run_enrichment(entry, config, entry_dir)
-        }
-        if (postde_config_enabled(config$decoupler) || postde_config_enabled(config$dream)) {
-            entry_outputs$regulatory <- postde_run_regulatory(entry, config, entry_dir)
+        if (postde_background_active(config)) {
+            full_dir <- file.path(entry_dir, "full")
+            bg_dir <- file.path(entry_dir, "background")
+            dir.create(full_dir, recursive = TRUE, showWarnings = FALSE)
+            dir.create(bg_dir, recursive = TRUE, showWarnings = FALSE)
+            bg <- postde_build_background(entry, config, bg_dir)
+            entry_outputs <- list(
+                full = run_analyses(entry, full_dir, FALSE),
+                background = run_analyses(postde_restrict_entry(entry, bg$genes), bg_dir, TRUE),
+                background_info = list(
+                    final = file.path(bg_dir, "background_final.tsv"),
+                    summary = file.path(bg_dir, "background_summary.json")
+                )
+            )
+        } else {
+            entry_outputs <- run_analyses(entry, entry_dir, FALSE)
         }
         outputs[[entry$id]] <- list(id = entry$id, dir = entry_dir, analyses = entry_outputs)
     }

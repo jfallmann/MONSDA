@@ -40,5 +40,8 @@ Notes:
 - Tools marked "no conda pkg" need `ENV`/`BIN` pointing at a locally
   installed executable instead of a bioconda environment name.
 - `PostDE` (gProfiler/clusterProfiler/GSVA/decoupleR/dream enrichment on top
-  of `DE` with `deseq2`/`edger`) is a separate top-level `POSTDE` config, not
-  a `WORKFLOWS` entry — see `reference/config-guide.md`.
+  of `DE` with `deseq2`/`edger`) lives under `DE.POSTDE` in the main config,
+  not a `WORKFLOWS` entry — see `reference/config-guide.md`. With a
+  background configured every analysis runs twice (full gene set +
+  background-restricted), outputs in `<entry>/full/` and
+  `<entry>/background/`.

@@ -10,7 +10,7 @@ Full human docs: `docs/source/config.rst`, `docs/source/conditiontree.rst`,
   "WORKFLOWS": "QC,TRIMMING,MAPPING,DEDUP",
   "BINS": "",
   "MAXTHREADS": "20",
-  "VERSION": "1.5.1",
+  "VERSION": "1.6.0",
   "SETTINGS": { ... },
   "QC": { ... },
   "TRIMMING": { ... },
@@ -155,11 +155,41 @@ project.
 
 ## PostDE (optional enrichment on top of DE)
 
-Only for the `DE` workflow with `deseq2`/`edger` (not DEU/DAS/DTU). Enabled
-via a top-level `POSTDE` key pointing at a separate analysis JSON (gProfiler/
-clusterProfiler/GSVA/decoupleR/dream). See `docs/source/config.rst` section
-"PostDE" and the shipped example `configs/postde_analysis.json` before
-building one — it has its own schema and conda env (`postde`).
+Only for the `DE` workflow with `deseq2`/`edger` (not DEU/DAS/DTU). Configured
+in the main config under `"DE": {"POSTDE": {...}}` — one block, no separate
+JSON file (methods: gProfiler/clusterProfiler/GSVA/decoupleR/dream; top-level
+`POSTDE` and a `config` key are rejected). It has its own conda env
+(`postde`). Defaults live in `MONSDA/extras/PostDE.py::POSTDE_DEFAULTS` and in
+`configs/template_base_commented.json`; the summary keys `plots`, `report`
+and `shiny` are rejected until a reporting module ships.
+
+Key semantics (validated at startup, before any workflow is generated):
+
+- One global block next to the DE tool options, applied to every contrast.
+- `background` (optional, single block replacing per-method background keys):
+  - `file`: one gene id per line, relative to the **run directory** (not the
+    config file's directory); staged into the PostDE workdir as
+    `background_file.<ext>`.
+  - `expressed`: derive from the DE run — `metric` `tpm|cpm|expression`,
+    `min` strict `>` cutoff, `min_samples` (default 1), `per_group`
+    (default true). `expression` = the engine's own average-expression
+    column: DESeq2 `baseMean`, edgeR `logCPM` — works with both tools but
+    `min` is on the engine's scale (baseMean raw counts vs logCPM log2);
+    no `min_samples`/`per_group`. `tpm` uses the full gene span from the
+    GTF, so absolute cutoffs are approximate; `cpm` is the robust default.
+    Counts have spike-ins removed and are raw (not normalized).
+  - `combine`: `intersect`|`union` of `file` and `expressed`; the result is
+    also intersected with the tested gene set.
+  - `include_significant` (default true): significant genes below the
+    cutoff are added back and a warning lists them.
+- With a background set, **every** analysis (gprofiler, clusterProfiler/GSEA,
+  GSVA, decoupleR, dream) runs on the full tested gene set AND on the
+  background-restricted set: outputs land in `<entry>/full/` and
+  `<entry>/background/` (plus `background_summary.json`), so results can be
+  compared against the ground truth. Without a background, outputs land in
+  `<entry>/` directly. Runtime roughly doubles with a background.
+- Restricted gProfiler runs map `domain_scope` `annotated`→
+  `custom_annotated` and `known`→`custom` automatically.
 
 ## Starting points in this repo
 
@@ -170,7 +200,6 @@ Valid JSON, safe to copy/parse directly:
 - `configs/tutorial_quick.json` — small worked example (FETCH+MAPPING on the
   bundled `tests/data` Ecoli set).
 - `configs/template_umicollapse.json` — UMI-aware dedup example.
-- `configs/postde_analysis.json` — example PostDE analysis JSON.
 
 **Documentation-only, NOT valid JSON** — these have trailing `#comment`
 annotations after values and will fail `json.load`; read them for the

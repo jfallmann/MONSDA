@@ -4,7 +4,7 @@ import math
 import os
 import shutil
 
-POSTDE_SECTION_KEYS = frozenset({"enabled", "config"})
+POSTDE_SECTION_KEYS = frozenset({"enabled", "comment"})
 POSTDE_TOP_KEYS = frozenset(
     {
         "padj",
@@ -20,8 +20,15 @@ POSTDE_TOP_KEYS = frozenset(
         "plots",
         "report",
         "shiny",
+        "background",
     }
 )
+POSTDE_BACKGROUND_KEYS = frozenset(
+    {"file", "expressed", "combine", "include_significant"}
+)
+POSTDE_EXPRESSED_KEYS = frozenset({"metric", "min", "min_samples", "per_group"})
+POSTDE_EXPRESSED_METRICS = ("tpm", "cpm", "expression")
+POSTDE_BACKGROUND_COMBINE = ("intersect", "union")
 POSTDE_METHOD_KEYS = {
     "gprofiler": frozenset(
         {
@@ -31,12 +38,9 @@ POSTDE_METHOD_KEYS = {
             "allow_network",
             "sources",
             "correction_method",
-            "background",
         }
     ),
-    "clusterprofiler": frozenset(
-        {"enabled", "term2gene", "term2name", "go_expand", "background"}
-    ),
+    "clusterprofiler": frozenset({"enabled", "term2gene", "term2name", "go_expand"}),
     "gsva": frozenset({"enabled", "method", "min_size", "max_size"}),
     "decoupler": frozenset(
         {
@@ -60,8 +64,8 @@ POSTDE_METHOD_KEYS = {
     "shiny": frozenset({"enabled"}),
 }
 POSTDE_RESOURCE_KEYS = {
-    "gprofiler": ("background",),
-    "clusterprofiler": ("term2gene", "term2name", "background"),
+    "background": ("file",),
+    "clusterprofiler": ("term2gene", "term2name"),
     "decoupler": ("network",),
     "dream": ("metadata",),
 }
@@ -69,6 +73,28 @@ POSTDE_BOOL_FLAGS = {
     "gprofiler": ("allow_network",),
     "clusterprofiler": ("go_expand",),
     "decoupler": ("allow_network", "contrast_activity"),
+}
+POSTDE_DEFAULTS = {
+    "enabled": True,
+    "padj": 0.05,
+    "lfc": 1,
+    "seed": 42,
+    "min_size": 10,
+    "max_size": 500,
+    "gprofiler": {
+        "enabled": True,
+        "organism": "hsapiens",
+        "domain_scope": "annotated",
+        "allow_network": True,
+        "sources": ["GO:BP", "GO:MF", "GO:CC", "REAC"],
+        "correction_method": "g_SCS",
+    },
+    "background": {
+        "file": None,
+        "expressed": {"metric": "cpm", "min": 1, "min_samples": 2, "per_group": True},
+        "combine": "intersect",
+        "include_significant": True,
+    },
 }
 POSTDE_SUPPORTED_DE_TOOLS = frozenset({"deseq2", "edger"})
 POSTDE_DOMAIN_SCOPES = ("annotated", "known", "custom", "custom_annotated")
@@ -95,6 +121,61 @@ def _is_number(value):
 
 def _is_integral(value):
     return _is_number(value) and value == int(value)
+
+
+def _validate_background(analysis):
+    bg = analysis.get("background")
+    if bg is None:
+        return
+    if not isinstance(bg, dict):
+        raise ValueError("POSTDE config background must be an object")
+    unknown = set(bg) - POSTDE_BACKGROUND_KEYS
+    if unknown:
+        raise ValueError(
+            "POSTDE config background has unknown fields: "
+            + ", ".join(sorted(unknown))
+        )
+    if "combine" in bg and bg["combine"] not in POSTDE_BACKGROUND_COMBINE:
+        raise ValueError(
+            "POSTDE config background.combine must be one of "
+            + ", ".join(POSTDE_BACKGROUND_COMBINE)
+        )
+    if "include_significant" in bg and not isinstance(
+        bg["include_significant"], bool
+    ):
+        raise ValueError("POSTDE config background.include_significant must be a boolean")
+    ex = bg.get("expressed")
+    if ex is None:
+        return
+    if not isinstance(ex, dict):
+        raise ValueError("POSTDE config background.expressed must be an object")
+    unknown = set(ex) - POSTDE_EXPRESSED_KEYS
+    if unknown:
+        raise ValueError(
+            "POSTDE config background.expressed has unknown fields: "
+            + ", ".join(sorted(unknown))
+        )
+    if ex.get("metric") not in POSTDE_EXPRESSED_METRICS:
+        raise ValueError(
+            "POSTDE config background.expressed.metric must be one of "
+            + ", ".join(POSTDE_EXPRESSED_METRICS)
+        )
+    if not _is_number(ex.get("min")) or ex["min"] < 0:
+        raise ValueError(
+            "POSTDE config background.expressed.min must be a number >= 0"
+        )
+    if "min_samples" in ex and (
+        not _is_integral(ex["min_samples"]) or ex["min_samples"] < 1
+    ):
+        raise ValueError(
+            "POSTDE config background.expressed.min_samples must be an integer >= 1"
+        )
+    if "per_group" in ex and not isinstance(ex["per_group"], bool):
+        raise ValueError("POSTDE config background.expressed.per_group must be a boolean")
+    if ex["metric"] == "expression" and ("min_samples" in ex or "per_group" in ex):
+        raise ValueError(
+            "POSTDE config background.expressed: min_samples/per_group are not available for metric expression"
+        )
 
 
 def _validate_analysis_config(analysis, base_dir):
@@ -146,6 +227,7 @@ def _validate_analysis_config(analysis, base_dir):
                 raise ValueError(
                     "POSTDE config " + method + "." + flag + " must be a boolean"
                 )
+    _validate_background(analysis)
     for vis in ("plots", "report", "shiny"):
         if analysis.get(vis, {}).get("enabled"):
             raise ValueError(
@@ -231,7 +313,7 @@ def _validate_analysis_config(analysis, base_dir):
         if not isinstance(dm.get("formula"), str) or not dm["formula"].strip():
             raise ValueError("POSTDE config dream.enabled=true requires dream.formula")
     for method, keys in POSTDE_RESOURCE_KEYS.items():
-        sub = analysis.get(method, {})
+        sub = analysis.get(method) or {}
         for key in keys:
             path = sub.get(key)
             if path is None:
@@ -252,58 +334,55 @@ def _validate_analysis_config(analysis, base_dir):
                 )
 
 
-def load_postde_config(section, config=None):
+def get_postde_section(config):
+    de = config.get("DE") if isinstance(config, dict) else None
+    return de.get("POSTDE") if isinstance(de, dict) else None
+
+
+def load_postde_config(config):
+    """Validate DE.POSTDE of the main config.
+
+    Returns None if the section is absent, else {"enabled": bool, "analysis":
+    dict} where analysis holds the settings without enabled/comment. Relative
+    resource paths are resolved against the run directory like all other
+    MONSDA paths.
+    """
+    section = get_postde_section(config)
     if section is None:
         return None
     if not isinstance(section, dict):
-        raise ValueError("POSTDE section must be an object")
-    unknown = set(section) - POSTDE_SECTION_KEYS
-    if unknown:
-        raise ValueError(
-            "POSTDE section has unknown fields: " + ", ".join(sorted(unknown))
-        )
+        raise ValueError("DE.POSTDE must be an object")
     if "enabled" not in section:
-        raise ValueError("POSTDE section missing required field 'enabled'")
+        raise ValueError("DE.POSTDE missing required field 'enabled'")
     if not isinstance(section["enabled"], bool):
-        raise ValueError("POSTDE.enabled must be a boolean")
+        raise ValueError("DE.POSTDE.enabled must be a boolean")
+    analysis = {
+        k: v for k, v in section.items() if k not in POSTDE_SECTION_KEYS
+    }
     if not section["enabled"]:
-        return {"enabled": False, "config": section.get("config", "")}
-    if not isinstance(section.get("config"), str) or not section["config"].strip():
-        raise ValueError("POSTDE.enabled=true requires a non-empty POSTDE.config path")
-    config_path = os.path.abspath(section["config"])
-    if not os.path.isfile(config_path):
-        raise ValueError("POSTDE.config file not found: " + config_path)
-    try:
-        with open(config_path) as fh:
-            analysis = json.load(fh)
-    except (OSError, ValueError) as err:
-        raise ValueError("POSTDE.config is not readable JSON: " + str(err))
-    if not isinstance(analysis, dict):
-        raise ValueError("POSTDE.config must contain a JSON object")
-    _validate_analysis_config(analysis, os.path.dirname(config_path))
-    if config is not None:
-        workflows = [
-            w.strip()
-            for w in str(config.get("WORKFLOWS", "")).split(",")
-            if w.strip()
-        ]
-        if "DE" not in workflows:
-            raise ValueError("POSTDE.enabled=true requires DE in WORKFLOWS")
-        de_tools = config.get("DE", {}).get("TOOLS", {})
-        if isinstance(de_tools, dict):
-            unsupported = set(de_tools) - POSTDE_SUPPORTED_DE_TOOLS
-            if unsupported:
-                raise ValueError(
-                    "POSTDE.enabled=true does not support DE tools: "
-                    + ", ".join(sorted(unsupported))
-                )
-    return {"enabled": True, "config": config_path}
+        return {"enabled": False, "analysis": analysis}
+    workflows = [
+        w.strip() for w in str(config.get("WORKFLOWS", "")).split(",") if w.strip()
+    ]
+    if "DE" not in workflows:
+        raise ValueError("DE.POSTDE.enabled=true requires DE in WORKFLOWS")
+    de_tools = config["DE"].get("TOOLS", {})
+    if not isinstance(de_tools, dict):
+        de_tools = {}
+    unsupported = set(de_tools) - POSTDE_SUPPORTED_DE_TOOLS
+    if unsupported:
+        raise ValueError(
+            "DE.POSTDE.enabled=true does not support DE tools: "
+            + ", ".join(sorted(unsupported))
+        )
+    _validate_analysis_config(analysis, os.getcwd())
+    return {"enabled": True, "analysis": analysis}
 
 
 def _collect_resources(analysis, base_dir):
     resources = []
     for method, keys in POSTDE_RESOURCE_KEYS.items():
-        sub = analysis.get(method, {})
+        sub = analysis.get(method) or {}
         for key in keys:
             path = sub.get(key)
             if path is None:
@@ -332,13 +411,11 @@ def _same_text(path, text):
 
 
 def prepare_postde(config, subdir):
-    section = load_postde_config(config.get("POSTDE"), config=config)
+    section = load_postde_config(config)
     if section is None or not section.get("enabled"):
         return None
-    config_path = section["config"]
-    with open(config_path) as fh:
-        analysis = json.load(fh)
-    base_dir = os.path.dirname(config_path)
+    analysis = section["analysis"]
+    base_dir = os.getcwd()
     resources = _collect_resources(analysis, base_dir)
     digest = hashlib.sha256()
     digest.update(json.dumps(analysis, sort_keys=True).encode("utf-8"))

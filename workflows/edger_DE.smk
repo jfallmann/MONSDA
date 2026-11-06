@@ -9,8 +9,8 @@ comparison = comparable_as_string(config,'DE')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 usededup = config.get('RUNDEDUP', False)
 usespike = True if "controlgenes=" in tool_params(samplecond(SAMPLES, config)[0], None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('DE', "") else False
-postde_enabled = config.get('POSTDE', {}).get('enabled', False)
-postde_inputs = config.get('POSTDE', {}).get('inputs', '') if postde_enabled else ''
+postde_enabled = config.get('DE', {}).get('POSTDE', {}).get('enabled', False)
+postde_inputs = config.get('DE', {}).get('POSTDE', {}).get('inputs', '') if postde_enabled else ''
 postde_flag = '1' if postde_enabled else '0'
 
 rule themall:

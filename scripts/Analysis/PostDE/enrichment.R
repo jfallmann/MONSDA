@@ -61,7 +61,7 @@ postde_flatten_list_cols <- function(df) {
     df
 }
 
-postde_run_gprofiler <- function(entry, config, outdir, gost_fun = NULL) {
+postde_run_gprofiler <- function(entry, config, outdir, gost_fun = NULL, restricted = FALSE) {
     if (!requireNamespace("gprofiler2", quietly = TRUE)) {
         stop("gprofiler enabled but package gprofiler2 is not installed")
     }
@@ -88,15 +88,11 @@ postde_run_gprofiler <- function(entry, config, outdir, gost_fun = NULL) {
     if (!correction_method %in% c("g_SCS", "bonferroni", "fdr", "false_discovery_rate", "gSCS", "analytical")) {
         stop(paste0("gprofiler: invalid correction_method '", correction_method, "'"))
     }
+    if (restricted) {
+        domain_scope <- switch(domain_scope, annotated = "custom_annotated", known = "custom", domain_scope)
+    }
     universe <- postde_ora_universe(entry$results)
     custom_bg <- universe
-    if (!is.null(gp$background)) {
-        bg <- postde_read_tsv(gp$background, header = FALSE)[[1]]
-        custom_bg <- intersect(bg, universe)
-        if (length(custom_bg) == 0) {
-            stop("gprofiler: background does not intersect the tested universe")
-        }
-    }
     padj <- config$padj
     lfc <- config$lfc
     out <- list()
@@ -258,13 +254,6 @@ postde_run_enrichment <- function(entry, config, outdir) {
         }
     }
     universe <- postde_ora_universe(entry$results)
-    if (!is.null(cp$background)) {
-        bg <- postde_read_tsv(cp$background, header = FALSE)[[1]]
-        universe <- intersect(bg, universe)
-        if (length(universe) == 0) {
-            stop("clusterprofiler: background does not intersect the tested universe")
-        }
-    }
     out <- list()
     if (cp_enabled) {
         ranked <- postde_rank_genes(entry$results, stat_col = "stat")

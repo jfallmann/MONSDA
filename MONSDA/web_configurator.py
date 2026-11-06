@@ -12,12 +12,12 @@ from snakemake.common.configfile import load_configfile
 
 from . import _version
 from .Params import samplesheet_to_settings
-from .PostDE import load_postde_config
+from .extras.PostDE import POSTDE_DEFAULTS, load_postde_config
 
 __version__ = _version.get_versions()["version"]
 
 TEMPLATE_FILE = "template_base_commented.json"
-NONE_WORKFLOW_KEYS = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION", "POSTDE"]
+NONE_WORKFLOW_KEYS = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]
 
 app = FastAPI(title="MONSDA Configurator Web")
 
@@ -246,13 +246,13 @@ def build_config(req: BuildConfigRequest) -> Dict[str, Any]:
             req.tools.get(wf, []),
         )
 
-    if req.postde is None:
-        final_config["POSTDE"] = {"enabled": False, "config": ""}
-    else:
+    if "DE" in final_config:
+        if req.postde and req.postde.get("enabled"):
+            final_config["DE"]["POSTDE"] = copy.deepcopy(POSTDE_DEFAULTS)
+        else:
+            final_config["DE"]["POSTDE"] = {"enabled": False}
         try:
-            final_config["POSTDE"] = load_postde_config(
-                req.postde, config=final_config
-            )
+            load_postde_config(final_config)
         except ValueError as err:
             raise HTTPException(status_code=400, detail=str(err))
 
@@ -369,9 +369,9 @@ def save_config(req: SaveConfigRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=400, detail="Output directory does not exist.")
 
     config = copy.deepcopy(req.config)
-    if "POSTDE" in config:
+    if isinstance(config.get("DE"), dict) and "POSTDE" in config["DE"]:
         try:
-            config["POSTDE"] = load_postde_config(config["POSTDE"], config=config)
+            load_postde_config(config)
         except ValueError as err:
             raise HTTPException(status_code=400, detail=str(err))
 
@@ -388,11 +388,13 @@ def create_project(req: ProjectRequest) -> Dict[str, Any]:
     project_name = req.project_name.strip() or "monsda"
 
     # Validate POSTDE before any creation/writes
-    if req.config and "POSTDE" in req.config:
+    if (
+        req.config
+        and isinstance(req.config.get("DE"), dict)
+        and "POSTDE" in req.config["DE"]
+    ):
         try:
-            req.config["POSTDE"] = load_postde_config(
-                req.config["POSTDE"], config=req.config
-            )
+            load_postde_config(req.config)
         except ValueError as err:
             raise HTTPException(status_code=400, detail=str(err))
 
@@ -774,11 +776,7 @@ def root() -> str:
       <label class="wf-chip" style="display:inline-flex; margin-bottom:6px;">
         <input type="checkbox" id="postdeEnabled" /> PostDE (GO/GSEA/GSVA/decoupleR/dream)
       </label>
-      <div class="muted" style="margin-bottom:8px;">Runs enrichment/regulatory analysis on DE results. DESeq2/edgeR only, requires the DE workflow.</div>
-      <div class="pathline">
-        <input id="postdeConfig" placeholder="/abs/path/to/postde_analysis.json" />
-        <button type="button" onclick="openPathBrowser('postdeConfig','all')">Browse...</button>
-      </div>
+      <div class="muted" style="margin-bottom:8px;">Runs enrichment/regulatory analysis on DE results. DESeq2/edgeR only, requires the DE workflow. Adds a DE.POSTDE block with default settings to the config, edit it there.</div>
     </div>
   </div>
 
@@ -992,7 +990,7 @@ async function loadTemplate() {
     holder.innerHTML = '';
 
     const workflows = Object.keys(data)
-      .filter(k => !['WORKFLOWS','BINS','MAXTHREADS','SETTINGS','VERSION','POSTDE'].includes(k))
+      .filter(k => !['WORKFLOWS','BINS','MAXTHREADS','SETTINGS','VERSION'].includes(k))
       .sort();
 
     workflows.forEach(wf => {
@@ -1304,8 +1302,7 @@ async function previewConfig() {
       settings: settings,
       samplesheet_path: document.getElementById('samplesheetPath').value.trim() || null,
       postde: {
-        enabled: document.getElementById('postdeEnabled').checked,
-        config: document.getElementById('postdeConfig').value.trim()
+        enabled: document.getElementById('postdeEnabled').checked
       }
     };
 
