@@ -1,7 +1,7 @@
 name: multx
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
   - nodefaults
 dependencies:  
   - fastp=1.0.1

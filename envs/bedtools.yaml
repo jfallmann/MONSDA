@@ -2,8 +2,7 @@ name: bedtools
 channels:
   - conda-forge
   - bioconda
-  - nodefaults
-  - r
+  - nodefaults  
 dependencies:
   - bedtools =2.31.1
   - grep =3.4

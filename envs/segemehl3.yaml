@@ -2,6 +2,7 @@ name: segemehl3
 channels:
   - conda-forge
   - bioconda
+  - nodefaults
 dependencies:
   - grep =2.14
   - samtools =1.21

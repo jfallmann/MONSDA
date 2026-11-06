@@ -1,7 +1,7 @@
 name: edger_DAS
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
   - nodefaults
 dependencies:
   - bioconductor-apeglm =1.28.0
