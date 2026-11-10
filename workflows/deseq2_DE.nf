@@ -97,6 +97,24 @@ process featurecount_deseq{
     """
 }
 
+process decompress_genome_deseq{
+    conda "$COUNTENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$COUNTENV"
+    cpus 1
+	cache 'lenient'
+
+    input:
+    path genome
+
+    output:
+    path "genome.fa", emit: genome_plain
+
+    script:
+    """
+    zcat -f $genome > genome.fa; if [ ! -s genome.fa ]; then echo "ERROR: decompressed genome from $genome is empty, check source file and filesystem" >&2; exit 1; fi
+    """
+}
+
 process oarfish_gene_count{
     conda "$COUNTENV"+".yaml"
     container "oras://jfallmann/monsda:"+"$COUNTENV"
@@ -121,13 +139,14 @@ process oarfish_gene_count{
 
     script:
     anno = fls[0]
-    bam = fls[1]
+    genomefa = fls[1]
+    bam = fls[2]
     fn = file(bam).getSimpleName().replaceAll(/\Q_mapped_sorted\E/,"")
     oc = fn+".counts.gz"
     os = fn+".counts.summary"
     ol = fn+".log"
     """
-    : > $ol; if [ ! -s $anno ]; then echo "ERROR: decompressed annotation $anno is empty, check source file and filesystem" >> $ol; exit 1; fi; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $ol; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $anno --genome-fasta $DEREF $QUANTPARAMS --output $fn &>> $ol && rm -f namecollated.bam && python3 $BINS/Analysis/oarfish_to_featurecounts.py -i ${fn}.quant -g $anno -s ${fn}_mapped_sorted.bam -o $oc 2>> $ol && touch $os
+    : > $ol; if [ ! -s $anno ]; then echo "ERROR: decompressed annotation $anno is empty, check source file and filesystem" >> $ol; exit 1; fi; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $ol; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $anno --genome-fasta $genomefa $QUANTPARAMS --output $fn &>> $ol && rm -f namecollated.bam && python3 $BINS/Analysis/oarfish_to_featurecounts.py -i ${fn}.quant -g $anno -s ${fn}_mapped_sorted.bam -o $oc 2>> $ol && touch $os
     """
 }
 
@@ -331,7 +350,8 @@ workflow DE{
         }
         mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
 
-        oarfish_gene_count(annogtf.combine(mapsamples_ch.collate(1)))
+        decompress_genome_deseq(Channel.fromPath(DEREF))
+        oarfish_gene_count(annogtf.combine(decompress_genome_deseq.out.genome_plain).combine(mapsamples_ch.collate(1)))
         countcts = oarfish_gene_count.out.fc_cts
     }
 

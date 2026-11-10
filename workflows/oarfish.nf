@@ -34,6 +34,24 @@ process decompress_annotation_oarfish{
     """
 }
 
+process decompress_genome_oarfish{
+    conda "$COUNTENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$COUNTENV"
+    cpus 1
+	cache 'lenient'
+
+    input:
+    path genome
+
+    output:
+    path "genome.fa", emit: genome_plain
+
+    script:
+    """
+    zcat -f $genome > genome.fa; if [ ! -s genome.fa ]; then echo "ERROR: decompressed genome from $genome is empty, check source file and filesystem" >&2; exit 1; fi
+    """
+}
+
 process oarfish_quant{
     conda "$COUNTENV"+".yaml"
     container "oras://jfallmann/monsda:"+"$COUNTENV"
@@ -56,13 +74,14 @@ process oarfish_quant{
 
     script:
     anno = fls[0]
-    bam = fls[1]
+    genomefa = fls[1]
+    bam = fls[2]
     fn = file(bam).getSimpleName().replaceAll(/\Q_mapped_sorted\E/,"")
     lf = "oarfish_"+fn+".log"
     oz = fn+"/quant.sf.gz"
     ol = fn+"_counts.gz"
     """
-    mkdir -p $fn; : > $lf; if [ ! -s $anno ]; then echo "ERROR: decompressed annotation $anno is empty, check source file and filesystem" >> $lf; exit 1; fi; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $lf; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $anno --genome-fasta $COUNTREF $COUNTPARAMS --output $fn/oarfish &>> $lf && rm -f namecollated.bam && python3 $BINS/Analysis/oarfish_to_salmon.py -i $fn/oarfish.quant -o $oz &>> $lf && ln -fs $oz $ol
+    mkdir -p $fn; : > $lf; if [ ! -s $anno ]; then echo "ERROR: decompressed annotation $anno is empty, check source file and filesystem" >> $lf; exit 1; fi; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $lf; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $anno --genome-fasta $genomefa $COUNTPARAMS --output $fn/oarfish &>> $lf && rm -f namecollated.bam && python3 $BINS/Analysis/oarfish_to_salmon.py -i $fn/oarfish.quant -o $oz &>> $lf && ln -fs $oz $ol
     """
 }
 
@@ -77,10 +96,13 @@ workflow COUNTING{
 
     mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
     annofile = Channel.fromPath(COUNTANNO)
+    genomefile = Channel.fromPath(COUNTREF)
+    decompress_genome_oarfish(genomefile)
+    genomefa = decompress_genome_oarfish.out.genome_plain
     decompress_annotation_oarfish(annofile)
     annogtf = decompress_annotation_oarfish.out.anno_plain
 
-    oarfish_quant(annogtf.combine(mapsamples_ch.collate(1)))
+    oarfish_quant(annogtf.combine(genomefa).combine(mapsamples_ch.collate(1)))
 
     emit:
     counts = oarfish_quant.out.counts
