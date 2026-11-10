@@ -74,6 +74,14 @@ Read the reference files below on demand (do not load all of them up front):
 - `monsda_configure` is an interactive terminal UI meant for humans; it is
   not practical to drive from an agent. Build/edit the JSON directly (or via
   `--samplesheet`) instead of trying to script the TUI.
+- When testing changes to MONSDA itself, do not run pytest in the working tree.
+  By default run `bash tests/run_installed_tests.sh [pytest args]` (or
+  `make test-installed`): it builds the wheel, installs it into a conda env
+  made from `envs/monsda_min.yaml`, and runs the whole suite against the
+  installed package from a staged copy of `tests/`. Set `MONSDA_TEST_ENV` to
+  reuse an existing env, `MONSDA_TEST_FRESH=1` to rebuild it. On a cluster
+  submit it as a Slurm job with `--time`. Report which tests failed because of
+  missing R packages (GSVA, decoupleR) separately from real failures.
 - If you are working inside a MONSDA git checkout rather than an installed
   release, see this repo's `AGENTS.md` for the dev-only gotchas (symlinks
   under `MONSDA/MONSDA`, PATH for `snakemake`/`nextflow`, golden-file tests).
