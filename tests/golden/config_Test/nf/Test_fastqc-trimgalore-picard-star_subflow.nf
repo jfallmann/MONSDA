@@ -144,7 +144,7 @@ process qc_raw{
     path "*.{zip,html}", emit: fastqc_results
     script:
     """
-    fastqc --quiet -t ${task.cpus} ${params.gQCPARAMS} --noextract -f fastq $read
+    fastqc --quiet -t ${task.cpus} ${params.gQCPARAMS} -f fastq $read
     """
 }
 workflow QC_RAW{
@@ -172,7 +172,7 @@ process qc_trimmed{
     path "*.{zip,html}", emit: fastqc_results
     script:
     """
-    fastqc --quiet -t ${task.cpus} ${params.gQCPARAMS} --noextract -f fastq $read
+    fastqc --quiet -t ${task.cpus} ${params.gQCPARAMS} -f fastq $read
     """
 }
 workflow QC_TRIMMING{
@@ -226,7 +226,7 @@ process qc_dedup{
     path "*.{zip,html}", emit: fastqc_results
     script:
     """
-    fastqc --quiet -t ${task.cpus} ${params.gQCPARAMS} --noextract -f fastq $read
+    fastqc --quiet -t ${task.cpus} ${params.gQCPARAMS} -f fastq $read
     """
 }
 workflow QC_DEDUP{

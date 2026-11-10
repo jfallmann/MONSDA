@@ -11,7 +11,7 @@ if QC_PAIRED == 'paired':
         threads: MAXTHREAD
         priority: 10
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet --outdir $OUT -t {threads} {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_dedup:
         input:  r1 = lambda wildcards: dedup_fastq_input(wildcards)
@@ -22,7 +22,7 @@ if QC_PAIRED == 'paired':
         threads: MAXTHREAD
         priority: 10
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet --outdir $OUT -t {threads} {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_trimmed:
         input:  r1 = lambda wildcards: trimmed_fastq_input(wildcards)
@@ -33,7 +33,7 @@ if QC_PAIRED == 'paired':
         threads: MAXTHREAD
         priority: 10
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet --outdir $OUT -t {threads} {params.qpara} -f fastq {input.r1} 2> {log}"
 
 else:
     rule qc_raw:
@@ -45,7 +45,7 @@ else:
         threads: MAXTHREAD
         priority: 10
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet --outdir $OUT -t {threads} {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_dedup:
         input:  r1 = lambda wildcards: dedup_fastq_input(wildcards)
@@ -56,7 +56,7 @@ else:
         threads: MAXTHREAD
         priority: 10
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet --outdir $OUT -t {threads} {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_trimmed:
         input:  r1 = lambda wildcards: trimmed_fastq_input(wildcards)
@@ -67,7 +67,7 @@ else:
         threads: MAXTHREAD
         priority: 10
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet --outdir $OUT -t {threads} {params.qpara} -f fastq {input.r1} 2> {log}"
 
 rule qc_mapped:
     input:   r1 = "MAPPED/{combo}/{file}_mapped_sorted.bam"
@@ -77,7 +77,7 @@ rule qc_mapped:
     container: "oras://jfallmann/monsda:"+QCENV+""
     threads: MAXTHREAD
     params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
-    shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
+    shell: "OUT=$(dirname {output.o1});fastqc --quiet --outdir $OUT -t {threads} {params.qpara} -f bam {input.r1} 2> {log}"
 
 rule qc_uniquemapped:
     input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam",
@@ -88,7 +88,7 @@ rule qc_uniquemapped:
     container: "oras://jfallmann/monsda:"+QCENV+""
     threads: MAXTHREAD
     params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
-    shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
+    shell: "OUT=$(dirname {output.o1});fastqc --quiet --outdir $OUT -t {threads} {params.qpara} -f bam {input.r1} 2> {log}"
 
 rule qc_dedupmapped:
     input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_dedup.bam",
@@ -99,7 +99,7 @@ rule qc_dedupmapped:
     container: "oras://jfallmann/monsda:"+QCENV+""
     threads: MAXTHREAD
     params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
-    shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
+    shell: "OUT=$(dirname {output.o1});fastqc --quiet --outdir $OUT -t {threads} {params.qpara} -f bam {input.r1} 2> {log}"
 
 rule qc_uniquededup:
     input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_unique_dedup.bam",
@@ -110,4 +110,4 @@ rule qc_uniquededup:
     container: "oras://jfallmann/monsda:"+QCENV+""
     threads: MAXTHREAD
     params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
-    shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
+    shell: "OUT=$(dirname {output.o1});fastqc --quiet --outdir $OUT -t {threads} {params.qpara} -f bam {input.r1} 2> {log}"

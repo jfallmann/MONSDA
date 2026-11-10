@@ -45,6 +45,20 @@
 #     source_refs:          workflows/*.smk or *.nf files this backs
 
 tools:
+  fastqc:
+    container: fastqc
+    binary: fastqc
+    invocations:
+      - name: qc-raw
+        args: ["--help"]
+        expected_flags: ["--outdir", "-q", "-t", "-f"]
+        source_refs: [workflows/fastqc.smk, workflows/fastqc_raw.smk, workflows/fastqc_trim.smk, workflows/fastqc_dedup.smk, workflows/fastqc_dedup_trim.smk, workflows/fastqc.nf, workflows/fastqc_raw.nf, workflows/fastqc_trim.nf, workflows/fastqc_dedup.nf, workflows/fastqc_dedup_trim.nf]
+        note: >
+          Regression check for the fixed bug: the templates used `-o` and
+          `--noextract`, which the conda fastqc 0.13.0 Python reimplementation
+          (envs/fastqc.yaml) no longer accepts; 0.12.1 (container) supports
+          both. Templates now use the long form `--outdir` and no
+          `--noextract`, which works in both versions.
   oarfish:
     container: oarfish
     binary: oarfish

@@ -25,7 +25,7 @@ process qc_raw{
 
     script:
     """
-    fastqc --quiet -t ${task.cpus} $QCPARAMS --noextract -f fastq $read
+    fastqc --quiet -t ${task.cpus} $QCPARAMS -f fastq $read
     """
 }
 
@@ -68,7 +68,7 @@ process qc_trimmed{
 
     script:
     """
-    fastqc --quiet -t ${task.cpus} $QCPARAMS --noextract -f fastq $read
+    fastqc --quiet -t ${task.cpus} $QCPARAMS -f fastq $read
     """
 }
 
@@ -107,7 +107,7 @@ process qc_dedup{
 
     script:
     """
-    fastqc --quiet -t ${task.cpus} $QCPARAMS --noextract -f fastq $read
+    fastqc --quiet -t ${task.cpus} $QCPARAMS -f fastq $read
     """
 }
 
