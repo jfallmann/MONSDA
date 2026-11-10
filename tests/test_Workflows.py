@@ -44,7 +44,11 @@ def _load(name):
 
 
 def _normalize(text, workdir):
-    return text.replace(str(workdir), "<WORKDIR>").replace(str(REPO), "<REPO>")
+    return (
+        text.replace(str(workdir), "<WORKDIR>")
+        .replace(mw.binpath, "<REPO>/MONSDA/MONSDA/scripts")
+        .replace(str(REPO), "<REPO>")
+    )
 
 
 def _check_golden(relpath, content):

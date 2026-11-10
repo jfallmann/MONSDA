@@ -27,7 +27,28 @@ installed release instead of the change.
 MONSDA aborts early if `nextflow` is missing, so `--nextflow` runs need that
 PATH.
 
+### Running the test suite (default: against the installed wheel)
+
+Do not run pytest straight in the working tree. Use
+
+    bash tests/run_installed_tests.sh [pytest args]     # or: make test-installed
+
+It builds a wheel from the checkout, installs it into a conda env created from
+`envs/monsda_min.yaml` (default `/tmp/monsda_installed_test/env`, reused on later
+runs), copies `tests/` to a stage dir whose `workflows/ envs/ scripts/ configs/`
+are symlinks into the installed `share/MONSDA`, and runs pytest there with
+`PYTHONPATH` unset. The tests therefore exercise the packaged code and data
+files, which also catches files missing from `setup.py` `data_files`.
+
+Env vars: `MONSDA_TEST_HOME` (work dir), `MONSDA_TEST_ENV` (existing env prefix,
+skips creation), `MONSDA_TEST_ENVFILE`, `MONSDA_TEST_FRESH=1` (recreate env).
+On a Slurm cluster run it inside an sbatch job with `--time` set, not on the
+login node. Rscript/GSVA/decoupleR are not in `monsda_min`; the R-dependent
+PostDE tests fail or skip there unless `Rscript` with those packages is on PATH.
+
 ### Gotchas when running MONSDA from a checkout
+
+(Only for generating/dry-running configs from the tree, not for the test suite.)
 
 - `envpath`/`workflowpath` resolve to `<repo>/MONSDA/MONSDA/{envs,workflows}`,
   which does not exist in a checkout. Create the symlinks before running and

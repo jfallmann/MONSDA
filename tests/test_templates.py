@@ -8,6 +8,8 @@ already shipped at least once, see the docstrings of the individual tests.
 import re
 from pathlib import Path
 
+import MONSDA.Workflows
+
 REPO = Path(__file__).resolve().parents[1]
 WORKFLOWS = REPO / "workflows"
 
@@ -170,7 +172,7 @@ def test_rustqc_multiqc_includes_deduplicated_bams():
     """RustQC's FeatureCounts QC must also run on the deduplicated BAMs."""
     rustqc = (WORKFLOWS / "rustqc.smk").read_text()
     multiqc = (WORKFLOWS / "multiqc_rustqc.smk").read_text()
-    generator = (REPO / "MONSDA" / "Workflows.py").read_text()
+    generator = Path(MONSDA.Workflows.__file__).read_text()
 
     assert '"MAPPED/{combo}/{file}_mapped_{type}_dedup.bam"' in rustqc
     assert "_bamqc('rustqc_dedupmapped', type=['sorted', 'sorted_unique'])" in multiqc
