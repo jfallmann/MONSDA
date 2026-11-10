@@ -149,6 +149,20 @@ def test_postprocess_nf_upstream_paths_use_combo():
     assert not bad, "upstream nextflow path uses the wrong combo:\n" + "\n".join(bad)
 
 
+def test_picard_dedup_adds_missing_read_groups():
+    for name in ("picard_dedup.smk", "picard_dedup.nf"):
+        text = (WORKFLOWS / name).read_text()
+        assert "AddOrReplaceReadGroups" in text
+        assert "MarkDuplicates" in text
+
+
+def test_diego_nextflow_shell_has_valid_quoting():
+    text = (WORKFLOWS / "diego_DAS.nf").read_text()
+    assert "awk \\'" not in text
+    assert "sed \\'" not in text
+    assert "cut -f1" in text
+
+
 def test_checks_cover_all_templates():
     """Guard against the selectors silently matching nothing."""
     assert len(_postprocess_smk()) > 20

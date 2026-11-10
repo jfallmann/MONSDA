@@ -37,8 +37,9 @@ process dedup_bam{
     outf = bams.getSimpleName()+"_dedup.bam"
     outl = bams.getSimpleName()+"_dedup.log"
     outm = bams.getSimpleName()+"_dedup_metrix.txt"
+    rgf = bams.getSimpleName()+"_rg.bam"
     """
-    mkdir -p TMP && $DEDUPBIN $JAVAPARAMS MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR TMP --INPUT $bams --OUTPUT $outf --METRICS_FILE $outm $DEDUPPARAMS &> $outl && samtools index $outf &>> $outl
+    mkdir -p TMP; : > $outl; if samtools view -H $bams | grep '^@RG' >/dev/null; then ln -sf $bams $rgf; else $DEDUPBIN $JAVAPARAMS AddOrReplaceReadGroups --INPUT $bams --OUTPUT $rgf --RGID ${bams.getSimpleName()} --RGLB MONSDA --RGPL ILLUMINA --RGPU ${bams.getSimpleName()} --RGSM ${bams.getSimpleName()} &>> $outl; fi && $DEDUPBIN $JAVAPARAMS MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR TMP --INPUT $rgf --OUTPUT $outf --METRICS_FILE $outm $DEDUPPARAMS &>> $outl && rm -f $rgf && samtools index $outf &>> $outl
     """
 }
 
