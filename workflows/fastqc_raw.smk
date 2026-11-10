@@ -10,7 +10,7 @@ if QC_PAIRED == 'paired':
         container: "oras://jfallmann/monsda:"+QCENV+""
         threads: MAXTHREAD
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet --outdir $OUT -t {threads} {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule multiqc:
         input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo)
@@ -31,7 +31,7 @@ else:
         container: "oras://jfallmann/monsda:"+QCENV+""
         threads: MAXTHREAD
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet --outdir $OUT -t {threads} {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule multiqc:
         input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), combo=combo)
