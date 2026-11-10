@@ -500,10 +500,18 @@ else:
         container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
         threads: 1
         shell:  "zcat -f {input.anno} > {output.anno} 2> {log}; if [ ! -s {output.anno} ]; then echo 'ERROR: decompressed annotation from {input.anno} is empty, check source file and filesystem' >> {log}; exit 1; fi"
+    rule decompress_genome:
+        input:  fa = REFERENCE
+        output: fa = temp("DTU/{combo}/"+COUNTENV+"/genome.fa")
+        log:    "LOGS/{combo}/DTU/"+COUNTENV+"/decompress_genome.log"
+        conda:  "<REPO>/envs/"+COUNTENV+".yaml"
+        container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
+        threads: 1
+        shell:  "zcat -f {input.fa} > {output.fa} 2> {log}; if [ ! -s {output.fa} ]; then echo 'ERROR: decompressed genome from {input.fa} is empty, check source file and filesystem' >> {log}; exit 1; fi"
     rule mapping:
         input:  bam = expand("MAPPED/{scombo}/{{file}}_mapped_sorted.bam", scombo=scombo),
                 anno = rules.decompress_annotation.output.anno,
-                fa = REFERENCE
+                gfa = rules.decompress_genome.output.fa
         output: cnts = report("DTU/{combo}/"+COUNTENV+"/{file}_counts.sf.gz", category="COUNTING"),
                 ctsdir = report(directory("DTU/{combo}/"+COUNTENV+"/{file}"), category="COUNTING")
         log:    "LOGS/{combo}/{file}/DTU/"+COUNTENV+"/quant.log"
@@ -516,7 +524,7 @@ else:
                 prefix = lambda wildcards, output: os.path.join(str(output.ctsdir), COUNTENV),
                 linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir)),
                 bins = BINS
-        shell: "set +euo pipefail; mkdir -p {output.ctsdir}; samtools collate -@ {threads} -o {params.nbam} {input.bam} &>> {log}; {params.mapp} --threads {threads} --genome-alignments {params.nbam} --annotation {input.anno} --genome-fasta {input.fa} {params.cpara} --output {params.prefix} &>> {log} && rm -f {params.nbam} && python3 {params.bins}/Analysis/oarfish_to_salmon.py -i {params.prefix}.quant -o {output.ctsdir}/quant.sf.gz &>> {log} ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
+        shell: "set +euo pipefail; mkdir -p {output.ctsdir}; samtools collate -@ {threads} -o {params.nbam} {input.bam} &>> {log}; {params.mapp} --threads {threads} --genome-alignments {params.nbam} --annotation {input.anno} --genome-fasta {input.gfa} {params.cpara} --output {params.prefix} &>> {log} && rm -f {params.nbam} && python3 {params.bins}/Analysis/oarfish_to_salmon.py -i {params.prefix}.quant -o {output.ctsdir}/quant.sf.gz &>> {log} ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
 if runterminus:
     rule terminus_group:
         input:  ctsdir = rules.mapping.output.ctsdir
