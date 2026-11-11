@@ -80,6 +80,33 @@ postde_activity_matrix <- function(acts, sample_names) {
     mat
 }
 
+postde_expression_for_targets <- function(entry, targets) {
+    expr <- entry$expression
+    if (length(intersect(targets, rownames(expr))) > 0) {
+        return(list(expression = expr, namespace = "id"))
+    }
+    gn <- entry$gene_names
+    if (is.null(gn) || length(gn) == 0) {
+        return(list(expression = expr, namespace = "id"))
+    }
+    nm <- unname(gn[rownames(expr)])
+    keep <- !is.na(nm) & nzchar(nm) & !grepl("|", nm, fixed = TRUE)
+    if (!any(keep)) {
+        return(list(expression = expr, namespace = "id"))
+    }
+    sub <- expr[keep, , drop = FALSE]
+    rownames(sub) <- nm[keep]
+    if (anyDuplicated(rownames(sub))) {
+        ord <- order(rownames(sub), -rowMeans(sub))
+        sub <- sub[ord, , drop = FALSE]
+        sub <- sub[!duplicated(rownames(sub)), , drop = FALSE]
+    }
+    if (length(intersect(targets, rownames(sub))) == 0) {
+        return(list(expression = expr, namespace = "id"))
+    }
+    list(expression = sub, namespace = "gene_name")
+}
+
 postde_run_decoupler <- function(entry, config, outdir) {
     if (!requireNamespace("decoupleR", quietly = TRUE)) {
         stop("decoupler enabled but package decoupleR is not installed")
@@ -116,27 +143,33 @@ postde_run_decoupler <- function(entry, config, outdir) {
     }
     net <- postde_validate_network(net)
     saveRDS(net, file.path(outdir, "decoupler_network.rds"))
-    targets <- intersect(net$target, rownames(entry$expression))
+    mapped <- postde_expression_for_targets(entry, net$target)
+    expr <- mapped$expression
+    if (mapped$namespace == "gene_name") {
+        message(paste0("postde[", entry$id, "]: network targets do not match expression ids, using gene names (", nrow(expr), " unique names)"))
+    }
+    targets <- intersect(net$target, rownames(expr))
     if (length(targets) == 0) {
         stop(paste0(
             "no network targets present in expression matrix: 0 of ", length(unique(net$target)),
             " network targets (e.g. ", paste(utils::head(unique(net$target), 3), collapse = ", "),
-            ") match the ", nrow(entry$expression), " expression row names (e.g. ",
-            paste(utils::head(rownames(entry$expression), 3), collapse = ", "),
+            ") match the ", nrow(expr), " expression row names (e.g. ",
+            paste(utils::head(rownames(expr), 3), collapse = ", "),
             "); network ids and expression ids must use the same namespace and organism"
         ))
     }
     net <- net[net$target %in% targets, , drop = FALSE]
     net <- decoupleR::rename_net(net, source, target, mor)
     min_size <- if (is.null(dc$min_size)) config$min_size else dc$min_size
-    net <- decoupleR::filt_minsize(rownames(entry$expression), net, minsize = min_size)
+    net <- decoupleR::filt_minsize(rownames(expr), net, minsize = min_size)
     if (nrow(net) == 0) {
         stop("no sources with at least min_size targets after filtering")
     }
     write.table(net, file.path(outdir, "decoupler_network_filtered.tsv"), sep = "\t", row.names = FALSE, quote = FALSE)
     net_meta <- list(
-        coverage = length(intersect(net$target, rownames(entry$expression))) / length(unique(net$target)),
+        coverage = length(intersect(net$target, rownames(expr))) / length(unique(net$target)),
         checksum = unname(tools::md5sum(file.path(outdir, "decoupler_network_filtered.tsv"))),
+        namespace = mapped$namespace,
         package = as.character(utils::packageVersion("decoupleR"))
     )
     saveRDS(net_meta, file.path(outdir, "decoupler_network_meta.rds"))
@@ -147,10 +180,10 @@ postde_run_decoupler <- function(entry, config, outdir) {
     out <- list()
     for (method in methods) {
         if (method == "ulm") {
-            acts <- decoupleR::run_ulm(entry$expression, net, minsize = min_size)
+            acts <- decoupleR::run_ulm(expr, net, minsize = min_size)
         } else if (method == "mlm") {
-            postde_check_mlm_rank(net, entry$expression)
-            acts <- decoupleR::run_mlm(entry$expression, net, minsize = min_size)
+            postde_check_mlm_rank(net, expr)
+            acts <- decoupleR::run_mlm(expr, net, minsize = min_size)
         } else {
             stop(paste0("unknown decoupler method '", method, "' (use ulm or mlm)"))
         }

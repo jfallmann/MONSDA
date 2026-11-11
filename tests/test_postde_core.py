@@ -401,3 +401,18 @@ def test_duplicate_sanitized_ids_rejected(tmp_path):
     )
     assert res.returncode != 0
     assert "duplicate" in res.stderr.lower() or "unsafe" in res.stderr.lower()
+
+
+def test_decoupler_gene_name_fallback():
+    result = subprocess.run(
+        [RSCRIPT, str(ROOT / "tests" / "postde_gene_name_fallback.R"), str(POSTDE_DIR)],
+        capture_output=True, text=True, timeout=120,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    summary = json.loads(result.stdout.strip().splitlines()[-1])
+    assert summary["name_fallback_used"] is True
+    assert summary["name_fallback_rows"] == "MYC,TP53"
+    assert summary["name_fallback_dup_keeps_highest_mean"] is True
+    assert summary["id_match_wins"] is True
+    assert summary["no_match_keeps_ids"] is True
+    assert summary["no_names_keeps_ids"] is True
