@@ -210,7 +210,8 @@ workflow {
     params.write_text(json.dumps(values))
     result = subprocess.run([engine, 'run', str(workflow), '-params-file', str(params),
                              '-work-dir', str(tmp_path / 'work')],
-                            capture_output=True, text=True, timeout=120)
+                            capture_output=True, text=True, timeout=120,
+                            env={**os.environ, 'JAVA_TOOL_OPTIONS': '-XX:-UseContainerSupport'})
     assert (result.returncode != 0) is mismatch, result.stdout + result.stderr
     markers = list((tmp_path / 'work').rglob('downstream.done'))
     assert bool(markers) is not mismatch

@@ -2023,7 +2023,7 @@ def fixRunParameters(
 ) -> str:
     para = tool_params(sample, runstate, config, workflow, env)["OPTIONS"].get(step, "")
     if paramToFix in para and fixedParam:
-        return re.sub(paramToFix + " [0-9a-zA-Z\.\_\-\\\/]+", fixedParam, para)
+        return re.sub(paramToFix + r" [0-9a-zA-Z\.\_\-\\/]+", fixedParam, para)
     else:
         log.warning(
             f"No parameter to fix {paramToFix} in INDEX options or fix {fixedParam} defined for {para}!"
