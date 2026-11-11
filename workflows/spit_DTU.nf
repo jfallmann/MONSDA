@@ -123,7 +123,7 @@ process run_spit{
 
     """
     mkdir -p Figures Tables
-    python3 $bin $anno $ref . $DTUCOMP $PCOMBO ${task.cpus} $dparams &> log ; ln -f Tables/* . && touch Figures/dummy && ln -f Figures/* .
+    python3 $bin $anno $ref . $DTUCOMP $PCOMBO ${task.cpus} $dparams &> log ; ln -f Tables/* . && touch Figures/placeholder && ln -f Figures/* .
     """
 }
 

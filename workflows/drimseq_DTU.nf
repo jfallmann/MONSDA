@@ -125,7 +125,7 @@ process run_drimseq{
 
     """
     mkdir -p Figures Tables
-    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO ${task.cpus} $dparams &> log ; ln -f Tables/* . && touch Figures/dummy && ln -f Figures/* .
+    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO ${task.cpus} $dparams &> log ; ln -f Tables/* . && touch Figures/placeholder && ln -f Figures/* .
     """
 }
 

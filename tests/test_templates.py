@@ -163,6 +163,23 @@ def test_diego_nextflow_shell_has_valid_quoting():
     assert "cut -f1" in text
 
 
+def test_nextflow_shell_avoids_header_channel_names():
+    """The generator rewrites bare global channel names (e.g. dummy) to calls,
+    which broke `touch Figures/dummy` as `Figures/dummy()` in the DTU shells."""
+    header = (WORKFLOWS / "header.nf").read_text()
+    chans = set(re.findall(r"^(\w+)\s*=\s*Channel\.", header, re.M))
+    pat = re.compile(r"(?:touch|ln -f?s?|mkdir -p)\s+[^\n&;|]*?/(" + "|".join(chans) + r")\b")
+    for f in WORKFLOWS.glob("*_DTU.nf"):
+        assert not pat.search(f.read_text()), f.name
+
+
+def test_rep_key_ignores_mapped_suffix():
+    """oarfish gene counts are named <sample>.counts.gz while REPS lists the
+    featureCounts style <sample>_mapped_sorted_unique.counts.gz."""
+    header = (WORKFLOWS / "header.nf").read_text()
+    assert "_mapped_sorted(_unique)?$" in header
+
+
 def test_checks_cover_all_templates():
     """Guard against the selectors silently matching nothing."""
     assert len(_postprocess_smk()) > 20
