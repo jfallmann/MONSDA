@@ -155,7 +155,8 @@ postde_run_decoupler <- function(entry, config, outdir) {
             " network targets (e.g. ", paste(utils::head(unique(net$target), 3), collapse = ", "),
             ") match the ", nrow(expr), " expression row names (e.g. ",
             paste(utils::head(rownames(expr), 3), collapse = ", "),
-            "); network ids and expression ids must use the same namespace and organism"
+            "); network ids and expression ids must use the same namespace and organism",
+            if (is.null(entry$gene_names) || length(entry$gene_names) == 0) " (this bundle carries no gene names, rerun the DE step with the current MONSDA to regenerate it)" else ""
         ))
     }
     net <- net[net$target %in% targets, , drop = FALSE]
