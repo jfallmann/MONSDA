@@ -60,6 +60,7 @@ names(files) <- sampleData_all$sample_id
 txdb.filename <- file.path(paste(gtf, "sqlite", sep = "."))
 txdb <- txdbmaker::makeTxDbFromGFF(gtf, format = "gtf")
 txdf <- select(txdb, keys(txdb, "GENEID"), "TXNAME", "GENEID")
+txdf$TXNAME <- gsub("\\.[0-9]+$", "", txdf$TXNAME)
 tab <- table(txdf$GENEID)
 txdf$ntx <- tab[match(txdf$GENEID, names(tab))]
 

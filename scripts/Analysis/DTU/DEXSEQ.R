@@ -68,15 +68,17 @@ if (combi == "none") {
 txdb.filename <- file.path(paste(gtf, "sqlite", sep = "."))
 txdb <- makeTxDbFromGFF(gtf, format = "gtf")
 txdf <- select(txdb, keys(txdb, "GENEID"), "TXNAME", "GENEID")
+txdf$TXNAME <- sub("\\.[0-9]+$", "", txdf$TXNAME)
 tab <- table(txdf$GENEID)
 txdf$ntx <- tab[match(txdf$GENEID, names(tab))]
 
 # get counts
 txi <- tximport(files, type = "salmon", txOut = TRUE, countsFromAbundance = "scaledTPM")
-cts <- txi$counts[rownames(txi$counts) %in% txdf$TXNAME, ] # We have to assume salmon was run with a decoy and do not want that in our cts table
-cts <- cts[rowSums(cts) > 0, ]
+quant_ids <- sub("\\.[0-9]+$", "", sub("\\|.*", "", rownames(txi$counts)))
+cts <- txi$counts[quant_ids %in% txdf$TXNAME, , drop = FALSE]
+rownames(cts) <- quant_ids[quant_ids %in% txdf$TXNAME]
+cts <- cts[rowSums(cts) > 0, , drop = FALSE]
 cts.original <- cts
-rownames(cts) <- sub("\\|.*", "", rownames(cts))
 
 # check for integrity -> define exception..
 all(rownames(cts) %in% txdf$TXNAME)
