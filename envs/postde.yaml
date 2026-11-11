@@ -16,6 +16,7 @@ dependencies:
   - bioconductor-go.db=3.22.0
   - bioconductor-gsva=2.4.9
   - bioconductor-limma=3.66.0
+  - bioconductor-omnipathr=4.0.3
   - bioconductor-variancepartition=1.40.2
   - bioconductor-biocparallel=1.44.0
   - r-plotly=4.12.1
