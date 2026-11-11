@@ -105,7 +105,7 @@ def rep_basename(f){
     return f.toString().split('/')[-1]
 }
 def rep_key(f){
-    return rep_basename(f).replaceFirst(/\.counts\.gz$/, '').replaceFirst(/_dedup$/, '')
+    return rep_basename(f).replaceFirst(/\.counts\.gz$/, '').replaceFirst(/_dedup$/, '').replaceFirst(/_mapped_sorted(_unique)?$/, '')
 }
 def rep_args(repsargs, staged){
     def mt = (repsargs =~ /(^|\s)-r\s+(\S+)/)

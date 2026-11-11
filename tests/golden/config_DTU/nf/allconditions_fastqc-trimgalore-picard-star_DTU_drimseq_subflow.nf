@@ -108,7 +108,7 @@ def rep_basename(f){
     return f.toString().split('/')[-1]
 }
 def rep_key(f){
-    return rep_basename(f).replaceFirst(/\.counts\.gz$/, '').replaceFirst(/_dedup$/, '')
+    return rep_basename(f).replaceFirst(/\.counts\.gz$/, '').replaceFirst(/_dedup$/, '').replaceFirst(/_mapped_sorted(_unique)?$/, '')
 }
 def rep_args(repsargs, staged){
     def mt = (repsargs =~ /(^|\s)-r\s+(\S+)/)
@@ -367,7 +367,7 @@ process run_drimseq{
     dparams = "'${params.gDTUPARAMS}'"
     """
     mkdir -p Figures Tables
-    Rscript --no-environ --no-restore --no-save $bin $anno $ref . ${params.gDTUCOMP} ${params.gPCOMBO} ${task.cpus} $dparams &> log ; ln -f Tables/* . && touch Figures/dummy() && ln -f Figures/* .
+    Rscript --no-environ --no-restore --no-save $bin $anno $ref . ${params.gDTUCOMP} ${params.gPCOMBO} ${task.cpus} $dparams &> log ; ln -f Tables/* . && touch Figures/placeholder && ln -f Figures/* .
     """
 }
 process collect_drimseq{
