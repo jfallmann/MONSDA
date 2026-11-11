@@ -118,7 +118,13 @@ postde_run_decoupler <- function(entry, config, outdir) {
     saveRDS(net, file.path(outdir, "decoupler_network.rds"))
     targets <- intersect(net$target, rownames(entry$expression))
     if (length(targets) == 0) {
-        stop("no network targets present in expression matrix")
+        stop(paste0(
+            "no network targets present in expression matrix: 0 of ", length(unique(net$target)),
+            " network targets (e.g. ", paste(utils::head(unique(net$target), 3), collapse = ", "),
+            ") match the ", nrow(entry$expression), " expression row names (e.g. ",
+            paste(utils::head(rownames(entry$expression), 3), collapse = ", "),
+            "); network ids and expression ids must use the same namespace and organism"
+        ))
     }
     net <- net[net$target %in% targets, , drop = FALSE]
     net <- decoupleR::rename_net(net, source, target, mor)
