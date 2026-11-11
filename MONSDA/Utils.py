@@ -38,7 +38,6 @@ from io import StringIO
 from operator import itemgetter
 
 import numpy as np
-import six
 from Bio import SeqIO
 
 
@@ -414,7 +413,7 @@ def merge_dicts(d:dict, u:dict) -> dict:
     except AttributeError:
         collectionsAbc = collections
 
-    for k, v in six.iteritems(u):
+    for k, v in u.items():
         dv = d.get(k, {})
         if not isinstance(dv, collectionsAbc.Mapping):
             d[k] = v
