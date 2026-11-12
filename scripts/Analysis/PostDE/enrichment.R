@@ -155,8 +155,12 @@ postde_run_enricher <- function(genes, universe, term2gene, term2name, min_size,
     if (anyDuplicated(genes)) {
         stop("significant gene list contains duplicate ids")
     }
+    if (length(intersect(universe, term2gene$gene)) == 0) {
+        stop("no overlap between tested genes and term2gene genes, check that term2gene uses the same gene ids as the DE results")
+    }
     if (length(intersect(genes, term2gene$gene)) == 0) {
-        stop("no overlap between significant genes and term2gene genes")
+        postde_write_empty(res_file, "no significant genes in term2gene", header = header)
+        return(list(status = "no significant genes in term2gene", result = res_file))
     }
     enr_args <- list(gene = genes, universe = universe, TERM2GENE = term2gene, pvalueCutoff = 1, qvalueCutoff = 1, minGSSize = min_size, maxGSSize = max_size)
     if (is.null(term2name)) {
