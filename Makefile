@@ -1,4 +1,4 @@
-.PHONY: help install install-dev lint lint-check format test test-cov build clean clean-build clean-pyc pre-commit deploy sync-config-versions check-config-versions
+.PHONY: help install install-dev lint lint-check format test test-installed test-cov build clean clean-build clean-pyc pre-commit deploy sync-config-versions check-config-versions
 
 help:
 	@echo "MONSDA Development Commands:"
@@ -15,6 +15,7 @@ help:
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test             Run unit tests"
+	@echo "  make test-installed   Build wheel, install into monsda_min env, run all tests against it"
 	@echo "  make test-cov         Run tests with coverage report"
 	@echo "  make test-integration Run integration tests (requires conda)"
 	@echo ""
@@ -51,6 +52,9 @@ format:
 
 test:
 	pytest tests/test_Utils.py -v
+
+test-installed:
+	bash tests/run_installed_tests.sh
 
 test-cov:
 	pytest tests/test_Utils.py -v --cov=MONSDA --cov-report=term-missing --cov-report=html

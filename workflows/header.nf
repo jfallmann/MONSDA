@@ -51,7 +51,7 @@ def rep_basename(f){
 }
 
 def rep_key(f){
-    return rep_basename(f).replaceFirst(/\.counts\.gz$/, '').replaceFirst(/_dedup$/, '')
+    return rep_basename(f).replaceFirst(/\.counts\.gz$/, '').replaceFirst(/_dedup$/, '').replaceFirst(/_mapped_sorted(_unique)?$/, '')
 }
 
 def rep_args(repsargs, staged){

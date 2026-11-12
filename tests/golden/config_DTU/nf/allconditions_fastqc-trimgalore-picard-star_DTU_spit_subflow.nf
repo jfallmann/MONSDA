@@ -108,7 +108,7 @@ def rep_basename(f){
     return f.toString().split('/')[-1]
 }
 def rep_key(f){
-    return rep_basename(f).replaceFirst(/\.counts\.gz$/, '').replaceFirst(/_dedup$/, '')
+    return rep_basename(f).replaceFirst(/\.counts\.gz$/, '').replaceFirst(/_dedup$/, '').replaceFirst(/_mapped_sorted(_unique)?$/, '')
 }
 def rep_args(repsargs, staged){
     def mt = (repsargs =~ /(^|\s)-r\s+(\S+)/)
@@ -205,6 +205,20 @@ process decompress_annotation_dtu{
     zcat -f $anno > annotation.gtf 2> log; if [ ! -s annotation.gtf ]; then echo "ERROR: decompressed annotation from $anno is empty, check source file and filesystem" >> log; exit 1; fi
     """
 }
+process decompress_genome_dtu{
+    conda "<REPO>/envs/${params.gCOUNTENV}"+".yaml"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gCOUNTENV}"+"-VERSION"
+    cpus 1
+	cache 'lenient'
+    input:
+    path genome
+    output:
+    path "genome.fa", emit: genome_plain
+    script:
+    """
+    zcat -f $genome > genome.fa; if [ ! -s genome.fa ]; then echo "ERROR: decompressed genome from $genome is empty, check source file and filesystem" >&2; exit 1; fi
+    """
+}
 process oarfish_dtu_quant{
     conda "<REPO>/envs/${params.gCOUNTENV}"+".yaml"
     container "oras://ghcr.io/jfallmann/monsda:"+"${params.gCOUNTENV}"+"-VERSION"
@@ -222,14 +236,15 @@ process oarfish_dtu_quant{
     path "*.log", emit: logs
     script:
     anno = fls[0]
-    bam = fls[1]
+    genomefa = fls[1]
+    bam = fls[2]
     fn = file(bam).getSimpleName().replaceAll(/\Q_mapped_sorted\E/,"")
     lf = "${params.gCOUNTENV}_"+fn+".log"
     prefix = fn+"/"+params.gCOUNTENV
     oz = fn+"/quant.sf.gz"
     ol = fn+"_counts.gz"
     """
-    mkdir -p $fn; : > $lf; if [ ! -s $anno ]; then echo "ERROR: decompressed annotation $anno is empty, check source file and filesystem" >> $lf; exit 1; fi; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $lf; ${params.gCOUNTBIN} --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $anno --genome-fasta ${params.gDTUREF} ${params.gCOUNTPARAMS} --output $prefix &>> $lf && rm -f namecollated.bam && python3 ${params.gBINS}/Analysis/oarfish_to_salmon.py -i ${prefix}.quant -o $oz &>> $lf && ln -fs $oz $ol
+    mkdir -p $fn; : > $lf; if [ ! -s $anno ]; then echo "ERROR: decompressed annotation $anno is empty, check source file and filesystem" >> $lf; exit 1; fi; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $lf; ${params.gCOUNTBIN} --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $anno --genome-fasta $genomefa ${params.gCOUNTPARAMS} --output $prefix &>> $lf && rm -f namecollated.bam && python3 ${params.gBINS}/Analysis/oarfish_to_salmon.py -i ${prefix}.quant -o $oz &>> $lf && ln -fs $oz $ol
     """
 }
 process create_summary_snippet{
@@ -350,7 +365,7 @@ process run_spit{
     dparams = "'${params.gDTUPARAMS}'"
     """
     mkdir -p Figures Tables
-    python3 $bin $anno $ref . ${params.gDTUCOMP} ${params.gPCOMBO} ${task.cpus} $dparams &> log ; ln -f Tables/* . && touch Figures/dummy() && ln -f Figures/* .
+    python3 $bin $anno $ref . ${params.gDTUCOMP} ${params.gPCOMBO} ${task.cpus} $dparams &> log ; ln -f Tables/* . && touch Figures/placeholder && ln -f Figures/* .
     """
 }
 process collect_spit{
@@ -401,7 +416,8 @@ workflow DTU{
         mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
         decompress_annotation_dtu(annofile)
         annogtf_dtu = decompress_annotation_dtu.out.anno_plain
-        oarfish_dtu_quant(annogtf_dtu.combine(mapsamples_ch.collate(1)))
+        decompress_genome_dtu(Channel.fromPath(params.gDTUREF))
+        oarfish_dtu_quant(annogtf_dtu.combine(decompress_genome_dtu.out.genome_plain).combine(mapsamples_ch.collate(1)))
         quantcounts = oarfish_dtu_quant.out.counts
     }
     prepare_dtu_annotation()

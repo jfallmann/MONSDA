@@ -8,6 +8,8 @@ already shipped at least once, see the docstrings of the individual tests.
 import re
 from pathlib import Path
 
+import MONSDA.Workflows
+
 REPO = Path(__file__).resolve().parents[1]
 WORKFLOWS = REPO / "workflows"
 
@@ -147,6 +149,37 @@ def test_postprocess_nf_upstream_paths_use_combo():
     assert not bad, "upstream nextflow path uses the wrong combo:\n" + "\n".join(bad)
 
 
+def test_picard_dedup_adds_missing_read_groups():
+    for name in ("picard_dedup.smk", "picard_dedup.nf"):
+        text = (WORKFLOWS / name).read_text()
+        assert "AddOrReplaceReadGroups" in text
+        assert "MarkDuplicates" in text
+
+
+def test_diego_nextflow_shell_has_valid_quoting():
+    text = (WORKFLOWS / "diego_DAS.nf").read_text()
+    assert "awk \\'" not in text
+    assert "sed \\'" not in text
+    assert "cut -f1" in text
+
+
+def test_nextflow_shell_avoids_header_channel_names():
+    """The generator rewrites bare global channel names (e.g. dummy) to calls,
+    which broke `touch Figures/dummy` as `Figures/dummy()` in the DTU shells."""
+    header = (WORKFLOWS / "header.nf").read_text()
+    chans = set(re.findall(r"^(\w+)\s*=\s*Channel\.", header, re.M))
+    pat = re.compile(r"(?:touch|ln -f?s?|mkdir -p)\s+[^\n&;|]*?/(" + "|".join(chans) + r")\b")
+    for f in WORKFLOWS.glob("*_DTU.nf"):
+        assert not pat.search(f.read_text()), f.name
+
+
+def test_rep_key_ignores_mapped_suffix():
+    """oarfish gene counts are named <sample>.counts.gz while REPS lists the
+    featureCounts style <sample>_mapped_sorted_unique.counts.gz."""
+    header = (WORKFLOWS / "header.nf").read_text()
+    assert "_mapped_sorted(_unique)?$" in header
+
+
 def test_checks_cover_all_templates():
     """Guard against the selectors silently matching nothing."""
     assert len(_postprocess_smk()) > 20
@@ -170,7 +203,7 @@ def test_rustqc_multiqc_includes_deduplicated_bams():
     """RustQC's FeatureCounts QC must also run on the deduplicated BAMs."""
     rustqc = (WORKFLOWS / "rustqc.smk").read_text()
     multiqc = (WORKFLOWS / "multiqc_rustqc.smk").read_text()
-    generator = (REPO / "MONSDA" / "Workflows.py").read_text()
+    generator = Path(MONSDA.Workflows.__file__).read_text()
 
     assert '"MAPPED/{combo}/{file}_mapped_{type}_dedup.bam"' in rustqc
     assert "_bamqc('rustqc_dedupmapped', type=['sorted', 'sorted_unique'])" in multiqc

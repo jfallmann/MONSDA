@@ -59,11 +59,21 @@ if COUNTTOOL == 'featureCounts':
                 prefix = lambda wildcards: "DE/"+combo+"/Featurecounts/"+wildcards.file
         shell:  "mkdir -p $(dirname {params.prefix}); {params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {input.anno} -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
 else:
+    rule decompress_genome:
+        input:  fa = REFERENCE
+        output: fa = temp("DE/{combo}/Featurecounts/genome.fa")
+        log:    "LOGS/{combo}/DE/edger/decompress_genome.log"
+        conda:  ""+COUNTENV+".yaml"
+        container: "oras://jfallmann/monsda:"+COUNTENV+""
+        threads: 1
+        shell:  "zcat -f {input.fa} > {output.fa} 2> {log}; if [ ! -s {output.fa} ]; then echo 'ERROR: decompressed genome from {input.fa} is empty, check source file and filesystem' >> {log}; exit 1; fi"
+
     # Long-read quantifiers (e.g. oarfish) quantify directly from the
     # genome-mapped BAM and are aggregated to gene level afterwards.
     rule featurecount_unique:
         input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted.bam", scombo=scombo),
-                anno  = rules.decompress_annotation.output.anno
+                anno  = rules.decompress_annotation.output.anno,
+                gfa   = rules.decompress_genome.output.fa
         output: cts   = "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz" if not usededup else "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique_dedup.counts.gz"
         log:    "LOGS/{combo}/{file}/DE/edger/"+COUNTENV+"_edger_unique.log"
         conda:  ""+COUNTENV+".yaml"
@@ -75,7 +85,7 @@ else:
                 cpara = lambda wildcards: tool_params(wildcards.file, None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('QUANT', ""),
                 bins = BINS,
                 prefix = lambda wildcards: "DE/"+combo+"/Featurecounts/"+wildcards.file
-        shell:  "mkdir -p $(dirname {params.prefix}); samtools collate -@ {threads} -o {params.prefix}_namecollated.bam {input.reads} 2> {log}; {params.countb} --threads {threads} --genome-alignments {params.prefix}_namecollated.bam --annotation {input.anno} --genome-fasta {params.ref} {params.cpara} --output {params.prefix} 2>> {log} && rm -f {params.prefix}_namecollated.bam && python3 {params.bins}/Analysis/oarfish_to_featurecounts.py -i {params.prefix}.quant -g {params.origanno} -s {wildcards.file}_mapped_sorted.bam -o {output.cts} 2>> {log}"
+        shell:  "mkdir -p $(dirname {params.prefix}); samtools collate -@ {threads} -o {params.prefix}_namecollated.bam {input.reads} 2> {log}; {params.countb} --threads {threads} --genome-alignments {params.prefix}_namecollated.bam --annotation {input.anno} --genome-fasta {input.gfa} {params.cpara} --output {params.prefix} 2>> {log} && rm -f {params.prefix}_namecollated.bam && python3 {params.bins}/Analysis/oarfish_to_featurecounts.py -i {params.prefix}.quant -g {params.origanno} -s {wildcards.file}_mapped_sorted.bam -o {output.cts} 2>> {log}"
 
 rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))

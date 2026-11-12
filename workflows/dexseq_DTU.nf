@@ -27,7 +27,7 @@ PCOMBO = get_always('COMBO') ?: 'none'
 
 //DTU PROCESSES
 
-include { salmon_quant; decompress_annotation_dtu; oarfish_dtu_quant; create_summary_snippet; terminus_collapse } from "dtu_base.nf"
+include { salmon_quant; decompress_annotation_dtu; decompress_genome_dtu; oarfish_dtu_quant; create_summary_snippet; terminus_collapse } from "dtu_base.nf"
 
 process salmon_idx{
     conda "$COUNTENV"+".yaml"
@@ -124,7 +124,7 @@ process run_dexseq{
 
     """
     mkdir -p Figures Tables
-    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO ${task.cpus} $dparams &> log ; ln -f Tables/* . && touch Figures/dummy && ln -f Figures/* .
+    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO ${task.cpus} $dparams &> log ; ln -f Tables/* . && touch Figures/placeholder && ln -f Figures/* .
     """
 }
 
@@ -184,7 +184,8 @@ workflow DTU{
         mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
         decompress_annotation_dtu(annofile)
         annogtf_dtu = decompress_annotation_dtu.out.anno_plain
-        oarfish_dtu_quant(annogtf_dtu.combine(mapsamples_ch.collate(1)))
+        decompress_genome_dtu(Channel.fromPath(DTUREF))
+        oarfish_dtu_quant(annogtf_dtu.combine(decompress_genome_dtu.out.genome_plain).combine(mapsamples_ch.collate(1)))
         quantcounts = oarfish_dtu_quant.out.counts
     }
 

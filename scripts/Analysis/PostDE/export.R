@@ -108,6 +108,16 @@ postde_capture <- function(engine, id, A, B, normalized, metadata, counts, expre
         cpm_mat <- calc_cpm(counts)
         tpm_mat <- calc_tpm(counts, gtf)
     }
+    gene_names <- NULL
+    if (!is.null(gtf) && "gene_id" %in% colnames(gtf)) {
+        name_col <- intersect(c("gene_name", "gene"), colnames(gtf))
+        if (length(name_col) > 0) {
+            nm <- as.character(gtf[[name_col[1]]])
+            ok <- !is.na(nm) & nzchar(nm) & !duplicated(as.character(gtf$gene_id))
+            gene_names <- setNames(nm[ok], as.character(gtf$gene_id)[ok])
+            gene_names <- gene_names[names(gene_names) %in% rownames(expression)]
+        }
+    }
     entry <- list(
         id = id,
         A = A,
@@ -122,7 +132,8 @@ postde_capture <- function(engine, id, A, B, normalized, metadata, counts, expre
         results = results,
         mean_scale = mean_scale,
         cpm = cpm_mat,
-        tpm = tpm_mat
+        tpm = tpm_mat,
+        gene_names = gene_names
     )
     # Spill each entry to its own file immediately rather than keeping every
     # contrast's counts/expression matrices resident for the whole run: with

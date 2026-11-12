@@ -86,6 +86,24 @@ process decompress_annotation_dtu{
     """
 }
 
+process decompress_genome_dtu{
+    conda "$COUNTENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$COUNTENV"
+    cpus 1
+	cache 'lenient'
+
+    input:
+    path genome
+
+    output:
+    path "genome.fa", emit: genome_plain
+
+    script:
+    """
+    zcat -f $genome > genome.fa; if [ ! -s genome.fa ]; then echo "ERROR: decompressed genome from $genome is empty, check source file and filesystem" >&2; exit 1; fi
+    """
+}
+
 process oarfish_dtu_quant{
     conda "$COUNTENV"+".yaml"
     container "oras://jfallmann/monsda:"+"$COUNTENV"
@@ -107,14 +125,15 @@ process oarfish_dtu_quant{
 
     script:
     anno = fls[0]
-    bam = fls[1]
+    genomefa = fls[1]
+    bam = fls[2]
     fn = file(bam).getSimpleName().replaceAll(/\Q_mapped_sorted\E/,"")
     lf = "${COUNTENV}_"+fn+".log"
     prefix = fn+"/"+COUNTENV
     oz = fn+"/quant.sf.gz"
     ol = fn+"_counts.gz"
     """
-    mkdir -p $fn; : > $lf; if [ ! -s $anno ]; then echo "ERROR: decompressed annotation $anno is empty, check source file and filesystem" >> $lf; exit 1; fi; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $lf; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $anno --genome-fasta $DTUREF $COUNTPARAMS --output $prefix &>> $lf && rm -f namecollated.bam && python3 $BINS/Analysis/oarfish_to_salmon.py -i ${prefix}.quant -o $oz &>> $lf && ln -fs $oz $ol
+    mkdir -p $fn; : > $lf; if [ ! -s $anno ]; then echo "ERROR: decompressed annotation $anno is empty, check source file and filesystem" >> $lf; exit 1; fi; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $lf; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $anno --genome-fasta $genomefa $COUNTPARAMS --output $prefix &>> $lf && rm -f namecollated.bam && python3 $BINS/Analysis/oarfish_to_salmon.py -i ${prefix}.quant -o $oz &>> $lf && ln -fs $oz $ol
     """
 }
 
