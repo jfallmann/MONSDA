@@ -18,7 +18,7 @@ outdir <- args[3]
 cmp <- args[4]
 combi <- args[5]
 cores <- as.integer(args[6])
-filter <- if (argsLen > 6) args[7] else "min_samps_feature_expr = 1, min_feature_expr = .1, min_samps_gene_expr = 1, min_gene_expr = 1"
+filter <- if (argsLen > 6 && nzchar(trimws(args[7]))) args[7] else "min_samps_feature_expr = 1, min_feature_expr = .1, min_samps_gene_expr = 1, min_gene_expr = 1"
 print(args)
 
 
