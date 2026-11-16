@@ -45,11 +45,15 @@ files, which also catches files missing from `setup.py` `data_files`.
 
 Env vars: `MONSDA_TEST_HOME` (work dir), `MONSDA_TEST_ENV` (existing env prefix,
 skips creation), `MONSDA_TEST_ENVFILE`, `MONSDA_TEST_FRESH=1` (recreate env).
-Prefer running it on the CBE cluster (`ssh cbe`, see the cbe-next skill), where
-the large test data lives: sync the checkout there and run the script inside an
-sbatch job with `--time` set, never on the login node. Run it locally only for
-quick checks that need no large data. Rscript/GSVA/decoupleR are not in `monsda_min`; the R-dependent
-PostDE tests fail or skip there unless `Rscript` with those packages is on PATH.
+
+This is a public repository: do not commit personal infrastructure here — no
+host aliases, user names, or cluster paths. If a large-data run on a personal
+HPC cluster is needed, keep that recipe in the *user's* global agent notes, not
+in this file, and run the suite there inside a batch job (never on a login
+node). The R-dependent PostDE tests skip when no `Rscript` with GSVA/decoupleR
+is on PATH; if an unrelated `Rscript` without those packages is found, they
+fail — that is an environment problem, not a code problem. The wheel build may
+warn about `MONSDA.lib` package-data discovery; harmless.
 
 ### Gotchas when running MONSDA from a checkout
 
@@ -89,35 +93,3 @@ PostDE tests fail or skip there unless `Rscript` with those packages is on PATH.
   the golden files in the stage copy, so copy them back with
   `rsync -a ${MONSDA_TEST_HOME:-/tmp/monsda_installed_test}/stage/tests/golden/ tests/golden/`
   and check `git diff tests/golden` only contains the intended lines.
-
-- `${HOME}/MONSDA` is a symlink to this repo, the same tree under a second path.
-  Editor diagnostics may report paths there, they refer to these files.
-
-## Test data and configs
-
-`${HOME}/Work2/Tests/MONSDATest` is the user's test directory. It holds real
-input data (`FASTQ/{Ecoli,SIMPLE,FGUMI}`, `GENOMES/Ecoli` incl. prebuilt
-indices, 122 BAMs in `MAPPED/`), their own configs at the top level and outputs
-of earlier runs. Use it instead of `tests/data`, which ships no BAMs. It is not
-a git repo, so nothing there is protected by version control.
-
-Put configs written for a test into `TESTCONFIGS/` so they can be reused:
-
-- `config_multiqc_fastqc.json`, `config_multiqc_rustqc.json`: QC, TRIMMING,
-  DEDUP, MAPPING on `Ecoli/KO` with a `MULTI` option set. The rustqc one selects
-  the `multiqc_rustqc` template, the fastqc one `multiqc`.
-- `monsda_gen.sh <config> <outdir> [--nextflow]`: generates only (`--save`).
-  Creates the `MONSDA/MONSDA` symlinks, stamps `VERSION` with the tree's
-  `MONSDA.__version__` and links `FASTQ`/`GENOMES` into a sandbox `outdir`, so
-  the outputs in the test root are not overwritten. MONSDA resolves input data
-  relative to its working directory, hence the links.
-- `mqc_script_test.sh <generated_subflow.nf> [combo] [condition] [params]`: runs
-  the generated nextflow `mqc` process with a fake `multiqc` that records its
-  argv, and checks the module list from `LOGS/versions.txt`, the scanned
-  directories and the published files. `nextflow lint` and `-preview` do not
-  render script bodies, so this is the only local check of that bash.
-- `mqc_smk_test.py <generated_subsnake.smk> [combo] [condition]`: same idea for
-  the snakemake side, formats the generated `multiqc` rule's `shell:` string and
-  runs it against a fake `multiqc`.
-
-Do not run tests in the test root itself, generate into a subdirectory.
