@@ -27,9 +27,12 @@ installed release instead of the change.
 MONSDA aborts early if `nextflow` is missing, so `--nextflow` runs need that
 PATH.
 
-### Running the test suite (default: against the installed wheel)
+### Running the test suite (always: against the installed wheel)
 
-Do not run pytest straight in the working tree. Use
+This is the only way to run the tests. Never run pytest in the working tree or
+in `tests/` of the checkout, it pollutes the repo with caches, generated
+workflows and logs. Build the package, install it into the minimal env
+(`envs/monsda_min.yaml`) and run the tests outside the repo. Use
 
     bash tests/run_installed_tests.sh [pytest args]     # or: make test-installed
 
@@ -42,8 +45,10 @@ files, which also catches files missing from `setup.py` `data_files`.
 
 Env vars: `MONSDA_TEST_HOME` (work dir), `MONSDA_TEST_ENV` (existing env prefix,
 skips creation), `MONSDA_TEST_ENVFILE`, `MONSDA_TEST_FRESH=1` (recreate env).
-On a Slurm cluster run it inside an sbatch job with `--time` set, not on the
-login node. Rscript/GSVA/decoupleR are not in `monsda_min`; the R-dependent
+Prefer running it on the CBE cluster (`ssh cbe`, see the cbe-next skill), where
+the large test data lives: sync the checkout there and run the script inside an
+sbatch job with `--time` set, never on the login node. Run it locally only for
+quick checks that need no large data. Rscript/GSVA/decoupleR are not in `monsda_min`; the R-dependent
 PostDE tests fail or skip there unless `Rscript` with those packages is on PATH.
 
 ### Gotchas when running MONSDA from a checkout
@@ -74,9 +79,16 @@ PostDE tests fail or skip there unless `Rscript` with those packages is on PATH.
   compare the failure set against a pristine worktree instead of expecting zero
   failures.
 
-- Workflow templates are snapshot tested. On intended changes regenerate with
-  `UPDATE_GOLDEN=1 python -m pytest` in `tests/` and check the golden diff only
-  contains the intended lines.
+- Workflow templates are snapshot tested. A golden mismatch is a test failure,
+  not something to refresh on every run: `UPDATE_GOLDEN` is opt-in and must
+  only be used after the diff has been reviewed and shown to be an intended
+  template change (the version string is already normalized to `VERSION`, so
+  version bumps never need it). Never set it by default or to make a red run
+  green. Regenerate with
+  `UPDATE_GOLDEN=1 bash tests/run_installed_tests.sh -k golden`. That rewrites
+  the golden files in the stage copy, so copy them back with
+  `rsync -a ${MONSDA_TEST_HOME:-/tmp/monsda_installed_test}/stage/tests/golden/ tests/golden/`
+  and check `git diff tests/golden` only contains the intended lines.
 
 - `${HOME}/MONSDA` is a symlink to this repo, the same tree under a second path.
   Editor diagnostics may report paths there, they refer to these files.
