@@ -37,9 +37,10 @@ process BamToBed{
     ol = fn+".log"
     def sortmem = Math.ceil(task.memory.giga as double) as int 
     
-    if (STRANDED == 'rf' || STRANDED == 'ISR'){
+    if (TRACKSSTRANDED == 'rf' || TRACKSSTRANDED == 'ISR'){
+        flip = TRACKSPAIRED == 'paired' ? 'if(\$F[3]=~/\\/1\$/)' : 'if(1)'
         """
-        bedtools bamtobed -split -i $bam | sed 's/ /_/g' | perl -wl -a -F'\\t' -n -e '\$F[0] =~ s/\\s/_/g;if(\$F[3]=~/\\/1\$/){{if (\$F[5] eq \"+\"){{\$F[5] = \"-\"}}elsif(\$F[5] eq \"-\"){{\$F[5] = \"+\"}}}} print join(\"\\t\",@F[0..\$#F])' | sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fo 2> $ol
+        bedtools bamtobed -split -i $bam | sed 's/ /_/g' | perl -wl -a -F'\\t' -n -e '\$F[0] =~ s/\\s/_/g;$flip{{if (\$F[5] eq \"+\"){{\$F[5] = \"-\"}}elsif (\$F[5] eq \"-\"){{\$F[5] = \"+\"}}}} print join(\"\\t\",@F[0..\$#F])' | sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fo 2> $ol
         """
     }else{
         """
@@ -66,8 +67,7 @@ process BedToBedg{
     path bedf
 
     output:
-    path "*fw.bedg.gz", emit: bedgf
-    path "*re.bedg.gz", emit: bedgr
+    tuple path(bedf), path("*fw.bedg.gz"), path("*re.bedg.gz"), emit: bedg
     path "*.log", emit: log
 
     script: 
@@ -101,12 +101,10 @@ process NormalizeBedg{
     }
 
     input:
-    path bedgf
-    path bedgr
+    tuple path(bedf), path(bedgf), path(bedgr)
 
     output:
-    path "*.fw.norm.bedg.gz", emit: bedgf
-    path "*.re.norm.bedg.gz", emit: bedgr
+    tuple path("*.fw.norm.bedg.gz"), path("*.re.norm.bedg.gz"), emit: bedg
     path "*.log", emit: log
 
     script: 
@@ -117,7 +115,7 @@ process NormalizeBedg{
     def sortmem = Math.ceil(task.memory.giga as double) as int 
     
     """
-    export LC_ALL=C; if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgf|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgf)| sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol; else gzip < /dev/null > $fw; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgr|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgr)| sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n|gzip > $fr 2> $ol; else gzip < /dev/null > $fr; echo \"File $bedgr empty\" >> $ol; fi
+    export LC_ALL=C; n=\$(zcat $bedf|cut -f4|sed 's/\\/[12]\$//'|sort -S $sortmem -T TMP -u|wc -l); if [[ \$n -eq 0 ]]; then n=1; fi; export scale=\$(bc <<< \"scale=6;\$n/1000000\"); if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgf)| sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol; else gzip < /dev/null > $fw; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgr)| sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n|gzip > $fr 2> $ol; else gzip < /dev/null > $fr; echo \"File $bedgr empty\" >> $ol; fi
     """
 }
 
@@ -135,24 +133,21 @@ process BedgToTRACKS{
     }
 
     input:
-    path bedgf
-    path rest
+    tuple path(bedgf), path(bedgr)
+    path sizes
     
     output:
-    path "*.fw.bw", emit: bwf
-    path "*.re.bw", emit: bwr
+    tuple path("*.fw.bw"), path("*.re.bw"), emit: bw
     path "*.log", emit: log
 
     script: 
-    bedgr = rest[0]
-    sizes = rest[1]
     fn = file(bedgf).getSimpleName()
     fw = fn+'.fw.bw'
     fr = fn+'.re.bw'
     ol = fn+".log"
     
     """
-    export LC_ALL=C; if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat $bedgf > tmp && bedGraphToBigWig tmp $sizes $fw 2> $ol; else gzip < /dev/null > $fw; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat $bedgr > tmp && bedGraphToBigWig tmp $sizes $fr 2>> $ol; else gzip < /dev/null > $fr; echo \"File $bedgr empty\" >> $ol; fi
+    export LC_ALL=C; if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat $bedgf > tmp && bedGraphToBigWig tmp $sizes $fw 2> $ol; else awk 'NR==1{print \$1\"\\t0\\t1\\t0\"}' $sizes > tmp && bedGraphToBigWig tmp $sizes $fw 2> $ol; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat $bedgr > tmp && bedGraphToBigWig tmp $sizes $fr 2>> $ol; else awk 'NR==1{print \$1\"\\t0\\t1\\t0\"}' $sizes > tmp && bedGraphToBigWig tmp $sizes $fr 2>> $ol; echo \"File $bedgr empty\" >> $ol; fi
     """
 }
 
@@ -170,8 +165,7 @@ process GenerateTrack{
     }
 
     input:
-    path bwf
-    path bwr
+    path bw
 
     output:
     path "*.txt", emit: trackdb
@@ -180,8 +174,10 @@ process GenerateTrack{
     script: 
     uid= SETS.replace(File.separator, "_")
     ol = uid+"_GenerateTrack.log"
+    fwlist = bw.collect{ it[0] }.join(' ')
+    relist = bw.collect{ it[1] }.join(' ')
     """
-    mkdir -p LOGS;touch LOGS/MONSDA.log; bf=($bwf); br=($bwr); blen=\${#bf[@]}; for i in \"\${!bf[@]}\";do f=\${bf[\$i]}; r=\${br[\$i]}; echo -e \"\$f\n\$r\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $uid -e 1 -f STDIN -u \"TRACKS/$SETS\" -g $REFDIR $TRACKSPARAMS 2>> $ol;done
+    mkdir -p LOGS;touch LOGS/MONSDA.log; bf=($fwlist); br=($relist); blen=\${#bf[@]}; for i in \"\${!bf[@]}\";do f=\${bf[\$i]}; r=\${br[\$i]}; echo -e \"\$f\n\$r\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $uid -e 1 -f STDIN -u \"TRACKS/$SETS\" -g $REFDIR $TRACKSPARAMS 2>> $ol;done
     """
 }
 
@@ -200,9 +196,9 @@ workflow TRACKS{
     UnzipGenome(genomefile)
     BamToBed(mapsamples_ch.collate(1))
     BedToBedg(BamToBed.out.bed.combine(UnzipGenome.out.index.combine(UnzipGenome.out.chromsize)))
-    NormalizeBedg(BedToBedg.out.bedgf.collate(1), BedToBedg.out.bedgr.collate(1))
-    BedgToTRACKS(NormalizeBedg.out.bedgf.collate(1), NormalizeBedg.out.bedgr.collate(1).combine(UnzipGenome.out.chromsize))
-    GenerateTrack(BedgToTRACKS.out.bwf.collect(), BedgToTRACKS.out.bwr.collect())
+    NormalizeBedg(BedToBedg.out.bedg)
+    BedgToTRACKS(NormalizeBedg.out.bedg.combine(UnzipGenome.out.chromsize))
+    GenerateTrack(BedgToTRACKS.out.bw.collect())
 
     emit:
     trackdb = GenerateTrack.out.trackdb
