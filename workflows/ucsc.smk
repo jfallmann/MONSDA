@@ -13,7 +13,7 @@ for file in samplecond(SAMPLES, config):
         checklist.append(os.path.isfile(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.bed.gz')))
 
 if not all(checklist):
-    if not stranded or (stranded == 'fr' or stranded == 'ISF'):
+    if not TRACKS_STRANDED or (TRACKS_STRANDED == 'fr' or TRACKS_STRANDED == 'ISF'):
         rule BamToBed:
             input:  expand("MAPPED/{scombo}/{{file}}_mapped_{{type}}.bam", scombo=scombo)
             output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
@@ -24,7 +24,7 @@ if not all(checklist):
             params: sortmem = get_sortmem
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
 
-    elif stranded and (stranded == 'rf' or stranded == 'ISR'):
+    elif TRACKS_STRANDED and (TRACKS_STRANDED == 'rf' or TRACKS_STRANDED == 'ISR'):
         rule BamToBed:
             input:  expand("MAPPED/{scombo}/{{file}}_mapped_{{type}}.bam", scombo=scombo)
             output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
@@ -32,8 +32,8 @@ if not all(checklist):
             conda:  "bedtools.yaml"
             container: "oras://jfallmann/monsda:bedtools"
             threads: 1
-            params: sortmem = get_sortmem
-            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
+            params: sortmem = get_sortmem, flip = r'if($F[3]=~/\/1$/)' if TRACKS_PAIRED == 'paired' else 'if(1)'
+            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;{params.flip}{{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
 
 include: "manipulate_genome.smk"
 
@@ -60,7 +60,8 @@ if not all(checklist):
 
 ### This step normalizes the bedg files for comparison in the browser
 rule NormalizeBedg:
-    input:  fw = rules.BedToBedg.output.fw,
+    input:  bed = rules.BedToBedg.input.bed,
+            fw = rules.BedToBedg.output.fw,
             re = rules.BedToBedg.output.re
     output: fw = "TRACKS/{combo}/{file}_mapped_{type}.fw.norm.bedg.gz",
             re = "TRACKS/{combo}/{file}_mapped_{type}.re.norm.bedg.gz"
@@ -69,7 +70,7 @@ rule NormalizeBedg:
     container: "oras://jfallmann/monsda:perl"
     threads: 1
     params: sortmem = get_sortmem
-    shell: "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n|gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
+    shell: "export LC_ALL=C; n=$(zcat {input.bed}|cut -f4|sed 's/\\/[12]$//'|sort -S {params.sortmem}G -T TMP -u|wc -l); if [[ $n -eq 0 ]]; then n=1; fi; export scale=$(bc <<< \"scale=6;$n/1000000\"); if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n|gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
 
 ### This step generates bigwig files for bedg which can then be copied to a web-browsable directory and uploaded to TRACKS via the track field
 rule BedgToTRACKS:
@@ -85,7 +86,7 @@ rule BedgToTRACKS:
     container: "oras://jfallmann/monsda:ucsc"
     threads: 1
     priority: 10               # This should be finished before we generate tracks
-    shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.tfw} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2> {log}; else touch {output.tfw}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.tre} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}; else touch {output.tre}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
+    shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.tfw} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2> {log}; else awk 'NR==1{{print $1\"\t0\t1\t0\"}}' {input.sizes} > {output.tfw} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2> {log}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.tre} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}; else awk 'NR==1{{print $1\"\t0\t1\t0\"}}' {input.sizes} > {output.tre} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}; echo \"File {input.re} empty\" >> {log}; fi"
 
 rule GenerateTrack:
     input:  fw = rules.BedgToTRACKS.output.fw,
