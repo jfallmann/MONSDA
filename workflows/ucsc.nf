@@ -4,7 +4,7 @@ TRACKSBIN = get_always('TRACKSBIN')
 REF = get_always('REFERENCE')
 REFDIR = "${workflow.workDir}/../"+get_always('REFDIR')
 SETS = get_always('SETS')
-TRACKSPARAMS = get_always('ucsc_TRACKS_params_UCSC') ?: ''
+TRACKSPARAMS = get_always('ucsc_params_UCSC') ?: get_always('ucsc_TRACKS_params_UCSC') ?: ''
 
 TRACKBIN = 'ucsc'
 TRACKENV = 'ucsc'
@@ -40,11 +40,11 @@ process BamToBed{
     if (TRACKSSTRANDED == 'rf' || TRACKSSTRANDED == 'ISR'){
         flip = TRACKSPAIRED == 'paired' ? 'if(\$F[3]=~/\\/1\$/)' : 'if(1)'
         """
-        bedtools bamtobed -split -i $bam | sed 's/ /_/g' | perl -wl -a -F'\\t' -n -e '\$F[0] =~ s/\\s/_/g;$flip{{if (\$F[5] eq \"+\"){{\$F[5] = \"-\"}}elsif (\$F[5] eq \"-\"){{\$F[5] = \"+\"}}}} print join(\"\\t\",@F[0..\$#F])' | sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fo 2> $ol
+        bedtools bamtobed -split -i $bam | sed 's/ /_/g' | perl -wl -a -F'\\t' -n -e '\$F[0] =~ s/\\s/_/g;$flip{{if (\$F[5] eq \"+\"){{\$F[5] = \"-\"}}elsif (\$F[5] eq \"-\"){{\$F[5] = \"+\"}}}} print join(\"\\t\",@F[0..\$#F])' | sort --parallel=${task.cpus} -S ${sortmem}G -T . -t\$'\\t' -k1,1 -k2,2n |gzip > $fo 2> $ol
         """
     }else{
         """
-        bedtools bamtobed -split -i $bam | sed 's/ /_/g' | perl -wl -a -F'\\t' -n -e '\$F[0] =~ s/\\s/_/g;if(\$F[3]=~/\\/2\$/){{if (\$F[5] eq \"+\"){{\$F[5] = \"-\"}}elsif(\$F[5] eq \"-\"){{\$F[5] = \"+\"}}}} print join(\"\\t\",@F[0..\$#F])' | sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fo 2> $ol
+        bedtools bamtobed -split -i $bam | sed 's/ /_/g' | perl -wl -a -F'\\t' -n -e '\$F[0] =~ s/\\s/_/g;if(\$F[3]=~/\\/2\$/){{if (\$F[5] eq \"+\"){{\$F[5] = \"-\"}}elsif(\$F[5] eq \"-\"){{\$F[5] = \"+\"}}}} print join(\"\\t\",@F[0..\$#F])' | sort --parallel=${task.cpus} -S ${sortmem}G -T . -t\$'\\t' -k1,1 -k2,2n |gzip > $fo 2> $ol
         """
     }
 }
@@ -65,15 +65,14 @@ process BedToBedg{
 
     input:
     path bedf
+    path sizes
 
     output:
     tuple path(bedf), path("*fw.bedg.gz"), path("*re.bedg.gz"), emit: bedg
     path "*.log", emit: log
 
     script: 
-    bed = bedf[0]
-    fai = bedf[1]
-    sizes = bedf[2]
+    bed = bedf
 
     fn = file(bed).getSimpleName()
     fw = fn+'.fw.bedg.gz'
@@ -82,7 +81,7 @@ process BedToBedg{
     def sortmem = Math.ceil(task.memory.giga as double) as int 
 
     """
-    export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i $bed -bg -split -strand + -g $sizes | sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol && bedtools genomecov -i $bed -bg -split -strand - -g $sizes |sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fr 2>> $ol
+    export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i $bed -bg -split -strand + -g $sizes | sort --parallel=${task.cpus} -S ${sortmem}G -T . -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol && bedtools genomecov -i $bed -bg -split -strand - -g $sizes |sort -S ${sortmem}G -T . -t\$'\\t' -k1,1 -k2,2n |gzip > $fr 2>> $ol
     """
 }
 
@@ -115,7 +114,7 @@ process NormalizeBedg{
     def sortmem = Math.ceil(task.memory.giga as double) as int 
     
     """
-    export LC_ALL=C; n=\$(zcat $bedf|cut -f4|sed 's/\\/[12]\$//'|sort -S $sortmem -T TMP -u|wc -l); if [[ \$n -eq 0 ]]; then n=1; fi; export scale=\$(bc <<< \"scale=6;\$n/1000000\"); if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgf)| sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol; else gzip < /dev/null > $fw; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgr)| sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n|gzip > $fr 2> $ol; else gzip < /dev/null > $fr; echo \"File $bedgr empty\" >> $ol; fi
+    export LC_ALL=C; n=\$(zcat $bedf|cut -f4|sed 's/\\/[12]\$//'|sort -S ${sortmem}G -T . -u|wc -l); if [[ \$n -eq 0 ]]; then n=1; fi; export scale=\$(bc <<< \"scale=6;\$n/1000000\"); if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgf)| sort -S ${sortmem}G -T . -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol; else gzip < /dev/null > $fw; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgr)| sort -S ${sortmem}G -T . -t\$'\\t' -k1,1 -k2,2n|gzip > $fr 2> $ol; else gzip < /dev/null > $fr; echo \"File $bedgr empty\" >> $ol; fi
     """
 }
 
@@ -174,10 +173,8 @@ process GenerateTrack{
     script: 
     uid= SETS.replace(File.separator, "_")
     ol = uid+"_GenerateTrack.log"
-    fwlist = bw.collect{ it[0] }.join(' ')
-    relist = bw.collect{ it[1] }.join(' ')
     """
-    mkdir -p LOGS;touch LOGS/MONSDA.log; bf=($fwlist); br=($relist); blen=\${#bf[@]}; for i in \"\${!bf[@]}\";do f=\${bf[\$i]}; r=\${br[\$i]}; echo -e \"\$f\n\$r\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $uid -e 1 -f STDIN -u \"TRACKS/$SETS\" -g $REFDIR $TRACKSPARAMS 2>> $ol;done
+    mkdir -p LOGS;touch LOGS/MONSDA.log; printf '%s\\n' *.bw|python3 $BINS/Analysis/GenerateTrackDb.py -i $uid -e 1 -f STDIN -u "TRACKS/${SCOMBO}/${CONDITION}" -g $REFDIR $TRACKSPARAMS 2>> $ol
     """
 }
 
@@ -187,17 +184,18 @@ workflow TRACKS{
     main:
     
     MAPPEDSAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted_*.bam"
+        element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted{,_*}.bam"
     }
 
     mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
     genomefile = Channel.fromPath(REF)
 
     UnzipGenome(genomefile)
-    BamToBed(mapsamples_ch.collate(1))
-    BedToBedg(BamToBed.out.bed.combine(UnzipGenome.out.index.combine(UnzipGenome.out.chromsize)))
+    chromsizes_ch = UnzipGenome.out.chromsize.first()
+    BamToBed(mapsamples_ch)
+    BedToBedg(BamToBed.out.bed, chromsizes_ch)
     NormalizeBedg(BedToBedg.out.bedg)
-    BedgToTRACKS(NormalizeBedg.out.bedg.combine(UnzipGenome.out.chromsize))
+    BedgToTRACKS(NormalizeBedg.out.bedg, chromsizes_ch)
     GenerateTrack(BedgToTRACKS.out.bw.collect())
 
     emit:

@@ -286,12 +286,14 @@ def main(
             if "\t" in bw:
                 bw, sample = content.split("\t", 2)
 
+            bwurl = url.rstrip("/") + "/" + bw if url else bw
+
             if header:
                 if not splitbw and ".re" in longlabel:
                     content = "\n".join(
                         [
                             "track " + sample + "_re",
-                            "bigDataUrl {1}/" + bw,
+                            "bigDataUrl " + bwurl,
                             "shortLabel {2}",
                             "longLabel {3}",
                             "type bigWig",
@@ -327,7 +329,7 @@ def main(
                     content = "\n".join(
                         [
                             "track " + sample + "_fw",
-                            "bigDataUrl {1}/" + bw,
+                            "bigDataUrl " + bwurl,
                             "shortLabel {2}",
                             "longLabel {3}",
                             "type bigWig",
@@ -341,7 +343,7 @@ def main(
                     content = "\n".join(
                         [
                             "track " + sample + "_re" + str(idx),
-                            "bigDataUrl {1}/" + bw,
+                            "bigDataUrl " + bwurl,
                             "shortLabel {2}" + str(idx),
                             "longLabel {3}" + str(idx),
                             "type bigWig",
@@ -353,7 +355,7 @@ def main(
                     content = "\n".join(
                         [
                             "track " + sample + "_fw" + str(idx),
-                            "bigDataUrl {1}/" + bw,
+                            "bigDataUrl " + bwurl,
                             "shortLabel {2}" + str(idx),
                             "longLabel {3}" + str(idx),
                             "type bigWig",

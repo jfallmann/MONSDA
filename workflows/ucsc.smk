@@ -88,6 +88,10 @@ rule BedgToTRACKS:
     priority: 10               # This should be finished before we generate tracks
     shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.tfw} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2> {log}; else awk 'NR==1{{print $1\"\t0\t1\t0\"}}' {input.sizes} > {output.tfw} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2> {log}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.tre} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}; else awk 'NR==1{{print $1\"\t0\t1\t0\"}}' {input.sizes} > {output.tre} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}; echo \"File {input.re} empty\" >> {log}; fi"
 
+def track_options(wildcards):
+    opts = tool_params(wildcards.file if os.sep in wildcards.file else os.sep.join([wildcards.combo, wildcards.file]), None, config, 'TRACKS', 'ucsc')['OPTIONS']
+    return opts['UCSC'] if 'UCSC' in opts else opts.get('TRACKS', "")
+
 rule GenerateTrack:
     input:  fw = rules.BedgToTRACKS.output.fw,
             re = rules.BedgToTRACKS.output.re
@@ -100,6 +104,6 @@ rule GenerateTrack:
     params: bwdir = lambda wildcards: "TRACKS/{src}".format(src=SETS),
             bins = os.path.abspath(BINS),
             gen = REFDIR,#lambda wildcards: os.path.basename(genomepath(wildcards.file, config)),
-            options = lambda wildcards: tool_params(wildcards.file, None, config, 'TRACKS', 'ucsc')['OPTIONS'].get('TRACKS', "") if os.sep in wildcards.file else tool_params(os.sep.join([wildcards.combo[1:], wildcards.file]), None, config, 'TRACKS', 'ucsc')['OPTIONS'].get('TRACKS', ""),
+            options = track_options,
             uid = lambda wildcards: "{src}".format(src='TRACKS'+os.sep+SETS.replace(os.sep, '_'))
     shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"

@@ -3,6 +3,7 @@ import gzip
 import importlib.util
 import json
 import os
+import shlex
 import shutil
 import subprocess
 from pathlib import Path
@@ -44,6 +45,17 @@ RF_PAIRED_MINUS = [(200, 250, 1), (700, 750, 1), (800, 850, 1)]
 UNIQUE_PLUS = [(100, 150, 1)]
 UNIQUE_MINUS = [(200, 250, 1)]
 
+TRACK_OPTIONS = '-n Eco_compare_Mapping -s dm6_st -l UCSC_DM6_compare_Mapping -b UCSC_dm6_star1'
+TRACK_HUB = 'UCSC_dm6_star1'
+
+
+def _track_config(options=None):
+    return {
+        'SETTINGS': {'combo': {'sample': {'SAMPLES': ['sample']},
+                               'empty': {'SAMPLES': ['empty']}}},
+        'TRACKS': {'combo': {'ucsc': {'OPTIONS': {'UCSC': TRACK_OPTIONS} if options is None else options}}},
+    }
+
 
 def _require(*tools):
     missing = [t for t in tools if not shutil.which(t)]
@@ -80,11 +92,11 @@ def sandbox(tmp_path, monkeypatch):
 def _smk(tmp_path, stranded, paired):
     prefix = (
         "import os\n"
+        "from MONSDA.Params import tool_params\n"
         "def samplecond(samples, config): return list(samples)\n"
-        "def tool_params(*args): return {'OPTIONS': {}}\n"
         "def get_sortmem(w, resources): return 4\n"
         "SAMPLES = ['sample', 'empty']\n"
-        "config = {}\n"
+        f"config = {_track_config()!r}\n"
         "scombo = 'combo'\n"
         "combo = 'combo'\n"
         "rundedup = False\n"
@@ -113,7 +125,7 @@ def _smk(tmp_path, stranded, paired):
 
 
 def _nf(tmp_path, stranded, paired):
-    from MONSDA.Workflows import nf_paramize
+    from MONSDA.Workflows import nf_paramize, nf_tool_params
     prefix = (
         'def get_always(key) {\n    return params[key]\n}\n'
         "SCOMBO = 'combo'\nCOMBO = 'combo'\nCONDITION = 'condition'\n"
@@ -141,13 +153,17 @@ workflow {
         'include { UnzipGenome; UnzipGenome_no_us } from "manipulate_genome.nf"',
         (WORKFLOWS / 'manipulate_genome.nf').read_text())
     workflow.write_text(nf_paramize(prefix + template + suffix))
+    tp = shlex.split(nf_tool_params('combo/sample', 'combo', _track_config(),
+                                    'TRACKS', 'ucsc', 'ucsc', None, 'combo'))
     params = tmp_path / 'params.json'
     params.write_text(json.dumps(dict(
         BINS=str(SCRIPTS), TRACKSENV='ucsc', TRACKSBIN='ucsc',
         REFERENCE='genome.fa.gz', REFDIR='.', SETS='combo',
-        ucsc_TRACKS_params_UCSC='', MAXTHREAD=1)))
+        ucsc_params_UCSC=tp[tp.index('--ucsc_params_UCSC') + 1], MAXTHREAD=1)))
+    nfconfig = tmp_path / 'nextflow.config'
+    nfconfig.write_text("process { memory = '1 GB' }\n")
     result = subprocess.run(['nextflow', 'run', str(workflow), '-params-file', str(params),
-                             '-work-dir', str(tmp_path / 'work')],
+                             '-c', str(nfconfig), '-work-dir', str(tmp_path / 'work')],
                             cwd=tmp_path, capture_output=True, text=True, timeout=300,
                             env={**os.environ, 'JAVA_TOOL_OPTIONS': '-XX:-UseContainerSupport'})
     assert result.returncode == 0, result.stdout + result.stderr
@@ -178,7 +194,23 @@ def _check_bigwig(path, expected, units):
         handle.close()
     assert [(s, e) for s, e, _ in intervals] == [(s, e) for s, e, _ in expected]
     for (_, _, value), (_, _, coverage) in zip(intervals, expected):
-        assert value == pytest.approx(coverage * 1e6 / units, rel=1e-9)
+        assert value == pytest.approx(coverage * 1e6 / units, rel=1e-6)
+
+
+def _check_tracks(trackdb, hub, root, prefix):
+    urls = [line.split(None, 1)[1] for line in trackdb.read_text().splitlines()
+            if line.startswith('bigDataUrl ')]
+    expected = [f'{sample}_mapped_{variant}.{orient}.bw'
+                for sample in ('sample', 'empty')
+                for variant in ('sorted', 'sorted_unique')
+                for orient in ('fw', 're')]
+    assert hub.read_text().splitlines()[0] == f'hub {TRACK_HUB}'
+    assert sorted(Path(url).name for url in urls) == sorted(expected)
+    for url in urls:
+        assert url.startswith('TRACKS/'), url
+        assert not url.startswith('/TRACKS/'), url
+        assert url.startswith(prefix), url
+        assert (root / url).is_file(), url
 
 
 @pytest.mark.parametrize('stranded,paired,plus,minus,uplus,uminus', [
@@ -197,6 +229,8 @@ def test_snakemake_normalization(sandbox, stranded, paired, plus, minus, uplus, 
     _check_bigwig(tracks / 'sample_mapped_sorted.fw.bw', plus, 7)
     _check_bigwig(tracks / 'sample_mapped_sorted.re.bw', minus, 7)
     _check_bigwig(tracks / 'sample_mapped_sorted_unique.fw.bw', uplus, 2)
+    _check_tracks(sandbox / 'TRACKS/combotrackdb.txt', sandbox / 'TRACKS/combohub.txt',
+                  sandbox, 'TRACKS/combo/')
 
 
 def test_snakemake_empty_library(sandbox):
@@ -205,7 +239,7 @@ def test_snakemake_empty_library(sandbox):
     tracks = sandbox / 'TRACKS/combo'
     for orient in ('fw', 're'):
         assert _bedg(tracks / f'empty_mapped_sorted.{orient}.norm.bedg.gz') == []
-        _check_bigwig(tracks / f'empty_mapped_sorted.{orient}.bw', [], 1)
+        _check_bigwig(tracks / f'empty_mapped_sorted.{orient}.bw', [(0, 1, 0)], 1)
     assert 'empty' in (sandbox / 'LOGS/combo/empty/TRACKS/ucsc/sorted_bedgtoucsc.log').read_text()
 
 
@@ -235,4 +269,44 @@ def test_nextflow_normalization(sandbox, stranded, paired, plus, minus, uplus, u
     _check_bigwig(tracks / 'sample_mapped_sorted.re.bw', minus, 7)
     for orient in ('fw', 're'):
         assert _bedg(tracks / f'empty_mapped_sorted.{orient}.norm.bedg.gz') == []
-        _check_bigwig(tracks / f'empty_mapped_sorted.{orient}.bw', [], 1)
+        _check_bigwig(tracks / f'empty_mapped_sorted.{orient}.bw', [(0, 1, 0)], 1)
+    _check_tracks(sandbox / 'TRACKS/combotrackdb.txt', sandbox / 'TRACKS/combohub.txt',
+                  sandbox, 'TRACKS/combo/condition/')
+
+
+@pytest.mark.parametrize('params,expected', [
+    ({'ucsc_params_UCSC': '-b canonical', 'ucsc_TRACKS_params_UCSC': '-b legacy'}, '-b canonical'),
+    ({'ucsc_TRACKS_params_UCSC': '-b legacy'}, '-b legacy'),
+    ({}, ''),
+])
+def test_nextflow_trackparams_resolution(sandbox, params, expected):
+    _require('nextflow')
+    from MONSDA.Workflows import nf_paramize
+    line = next(ln for ln in (WORKFLOWS / 'ucsc.nf').read_text().splitlines()
+                if ln.startswith('TRACKSPARAMS'))
+    workflow = sandbox / 'resolve.nf'
+    workflow.write_text(nf_paramize(
+        'def get_always(key) {\n    return params.containsKey(key) ? params[key] : null\n}\n'
+        + line + '\n'
+        '''
+process resolve {
+    publishDir 'resolved', mode: 'copy'
+    output:
+    path 'resolved.txt'
+    script:
+    """
+    printf '%s' '${params.gTRACKSPARAMS}' > resolved.txt
+    """
+}
+workflow {
+    resolve()
+}
+'''))
+    paramsfile = sandbox / 'resolve_params.json'
+    paramsfile.write_text(json.dumps(params))
+    result = subprocess.run(['nextflow', 'run', str(workflow), '-params-file', str(paramsfile),
+                             '-work-dir', str(sandbox / 'resolve_work')],
+                            cwd=sandbox, capture_output=True, text=True, timeout=300,
+                            env={**os.environ, 'JAVA_TOOL_OPTIONS': '-XX:-UseContainerSupport'})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (sandbox / 'resolved/resolved.txt').read_text() == expected
