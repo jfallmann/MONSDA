@@ -4,6 +4,9 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
+  - samtools
+  - bedtools
+  - ucsc-bedgraphtobigwig
   - biopython=1.86
   - fastapi=0.128.5
   - grep >=3.4
