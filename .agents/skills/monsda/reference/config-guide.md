@@ -129,6 +129,13 @@ Each step listed in `WORKFLOWS` needs:
   derives automatically (paired/stranded flags, threads). Leave `OPTIONS: {}`
   if no extra flags are needed; never invent a flag that isn't in the tool's
   own `--help`.
+- `OPTIONS.QUANT` is the documented key for the quantification flags of
+  `COUNTING`, `DE`, `DEU`, `DAS` and `DTU`, in both the Snakemake and the
+  Nextflow engine. If `QUANT` is missing or blank, MONSDA falls back to a
+  non-blank legacy `OPTIONS.COUNT` and logs a warning; the two are never
+  merged, so a set `QUANT` simply wins and `COUNT` is dropped. `COUNTTOOL`
+  (which counting tool to run, e.g. `featureCounts`/`salmon`) is a separate
+  key and is not affected.
 - `COMPARABLE` (DE/DEU/DAS/DTU and MACS peak calling): if omitted/empty,
   MONSDA generates all-vs-all comparisons from `GROUPS`. Otherwise:
   ```json

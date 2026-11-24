@@ -394,6 +394,8 @@ DTUBIN, DTUENV = env_bin_from_config(config,'DTU')
 log.debug(logid+"DTUENV: "+str(DTUENV))
 COUNTTOOL = tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('COUNTTOOL', 'salmon')
 COUNTBIN, COUNTENV = [COUNTTOOL, COUNTTOOL]
+dtuimport = tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('DTU_IMPORT', None)
+importmode = dtuimport if (COUNTTOOL == 'oarfish' and dtuimport) else ('no' if COUNTTOOL == 'oarfish' else 'scaledTPM')
 comparison = comparable_as_string(config,'DTU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 usededup = config.get('RUNDEDUP', False)
@@ -565,10 +567,11 @@ rule run_DTU:
             pcombo = scombo if scombo != '' else 'none',
             outdir = 'DTU/'+combo,
             ref = os.path.abspath(ANNOTATION),
-            dtuopt = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('DTU', "")
+            dtuopt = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('DTU', ""),
+            importmode = importmode
             # pv_cut = get_cutoff_as_string(config, 'DTU', 'padj'),
             # lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc')
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.dtuopt}\' 2> {log[0]}"
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.dtuopt}\' \'{params.importmode}\' 2> {log[0]}"
 # rule filter_significant:
 #     input:  res = rules.run_DTU.output.res
 #     output: sig   = rules.themall.input.sig,

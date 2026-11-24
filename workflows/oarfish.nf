@@ -6,7 +6,7 @@ COUNTREFDIR = "${workflow.workDir}/../"+get_always('COUNTINGREFDIR')
 COUNTANNO = get_always('COUNTINGANNO')
 COUNTPREFIX = get_always('COUNTINGPREFIX') ?: COUNTBIN.split(' ')[0]
 
-COUNTPARAMS = get_always('oarfish_params_COUNT') ?: ''
+COUNTPARAMS = get_always('oarfish_params_QUANT') ?: ''
 
 //COUNTING PROCESSES
 

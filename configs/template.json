@@ -263,7 +263,7 @@
                                         "countreads":{
                                             "OPTIONS":
                                             {
-                                                "COUNT": "-f --fraction -O -M"  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options, make sure you use correct options depending on gff/gtf input
+                                                "QUANT": "-f --fraction -O -M"  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options, make sure you use correct options depending on gff/gtf input
                                             }
                                         },
                                         "salmon": {
@@ -363,14 +363,14 @@
                     "deseq2": {
                         "OPTIONS":
                         {
-                            "COUNT": "-t gene -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "QUANT": "-t gene -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
                             "DE": "controlgenes=spike-in.list"  # Options for DE Analysis
                         }
                     },
                     "edger": {
                         "OPTIONS":
                         {
-                            "COUNT": "-t gene -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "QUANT": "-t gene -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
                             "DE": "controlgenes=spike-in.list"  # Options for DE Analysis
                         }
                     }
@@ -405,7 +405,7 @@
                     {
                         "OPTIONS":
                         {
-                            "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "QUANT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
                             "DEU": ""  # Options for DE Analysis
                         }
                     },
@@ -413,7 +413,7 @@
                     {
                         "OPTIONS":
                         {
-                            "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "QUANT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
                             "DEU": ""  # Options for DE Analysis
                         }
                     }
@@ -448,7 +448,7 @@
                     {
                         "OPTIONS":
                         {
-                            "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "QUANT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
                             "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for Analysis
                         }
                     },
@@ -456,7 +456,7 @@
                     {
                         "OPTIONS":
                         {
-                            "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "QUANT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
                             "DAS": ""  # Options for DE Analysis
                         }
                     }
@@ -492,7 +492,7 @@
                         "OPTIONS":
                         {
                             "INDEX": "",  # salmon index options
-                            "QUANT": "--seqBias --gcBias",  # salmon quant options
+                            "QUANT": "--seqBias --gcBias",  # salmon/oarfish quant options
                             "DTU": ""  # Options for Analysis
                         }
                     },
@@ -501,7 +501,7 @@
                         "OPTIONS":
                         {
                             "INDEX": "",  # salmon index options
-                            "QUANT": "--seqBias --gcBias",  # salmon quant options
+                            "QUANT": "--seqBias --gcBias",  # salmon/oarfish quant options
                             "DTU": ""  # Options for Analysis
                         }
                     },
@@ -510,7 +510,7 @@
                         "OPTIONS":
                         {
                             "INDEX": "",  # salmon index options
-                            "QUANT": "--seqBias --gcBias",  # salmon quant options
+                            "QUANT": "--seqBias --gcBias",  # salmon/oarfish quant options
                             "DTU": ""  # Options for Analysis
                         }
                     }

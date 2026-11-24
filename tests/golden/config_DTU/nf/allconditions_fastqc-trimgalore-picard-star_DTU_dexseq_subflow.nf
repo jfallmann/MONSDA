@@ -63,11 +63,12 @@ params.gDTUDECOY = get_always('DTUDECOY')
 params.gDTUIDX = get_always('DTUIDX')
 params.gDTUUIDX = get_always('DTUUIDX')
 params.gDTUUIDXNAME = get_always('DTUUIDXNAME')+'.idx'
-params.gCOUNTTOOL = get_always('DTUCOUNTTOOL') ?: 'salmon'
+params.gCOUNTTOOL = (get_always('dexseq_DTU_params_COUNTTOOL') ?: get_always('DTUCOUNTTOOL') ?: 'salmon').trim()
 params.gCOUNTBIN = params.gCOUNTTOOL
 params.gCOUNTENV = params.gCOUNTTOOL
 params.gIDXPARAMS = get_always('dexseq_DTU_params_INDEX') ?: ''
-params.gCOUNTPARAMS = get_always('dexseq_DTU_params_COUNT') ?: ''
+params.gCOUNTPARAMS = get_always('dexseq_DTU_params_QUANT') ?: ''
+params.gDTUIMPORT = (params.gCOUNTTOOL == 'oarfish') ? ((get_always('dexseq_DTU_params_DTU_IMPORT') ?: 'no').trim()) : 'scaledTPM'
 params.gDTUPARAMS = get_always('dexseq_DTU_params_DTU') ?: ''
 params.gRUNTERMINUS = (params.gCOUNTTOOL != 'salmon') ? '' : (get_always('dexseq_DTU_params_TERMINUS') ?: '')
 params.gDTUREPS = get_always('DTUREPS') ?: ''
@@ -165,7 +166,7 @@ process salmon_quant{
         oz = fn+"/quant.sf.gz"
         ol = fn+"_counts.gz"
         """
-        ${params.gCOUNTBIN} ${params.gCOUNTPARAMS} quant -p ${task.cpus} -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
+        ${params.gCOUNTBIN} quant -p ${task.cpus} -i $idx $stranded -o $fn ${params.gCOUNTPARAMS} -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }else{
         if (params.gDTUSTRANDED == 'fr' || params.gDTUSTRANDED == 'SF'){
@@ -182,7 +183,7 @@ process salmon_quant{
         oz = fn+"/quant.sf.gz"
         ol = fn+"_counts.gz"
         """
-        ${params.gCOUNTBIN} ${params.gCOUNTPARAMS} quant -p ${task.cpus} -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && ln -fs $oz $ol
+        ${params.gCOUNTBIN} quant -p ${task.cpus} -i $idx $stranded -o $fn ${params.gCOUNTPARAMS} -r $read &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }
 }
@@ -364,9 +365,10 @@ process run_dexseq{
     bin = "${params.gBINS}"+File.separatorChar+"${params.gDTUBIN}"
     comp = "${params.gDTUCOMP}".split(':')[0]
     dparams = "'${params.gDTUPARAMS}'"
+    imp = "'${params.gDTUIMPORT}'"
     """
     mkdir -p Figures Tables
-    Rscript --no-environ --no-restore --no-save $bin $anno $ref . ${params.gDTUCOMP} ${params.gPCOMBO} ${task.cpus} $dparams &> log ; ln -f Tables/* . && touch Figures/placeholder && ln -f Figures/* .
+    Rscript --no-environ --no-restore --no-save $bin $anno $ref . ${params.gDTUCOMP} ${params.gPCOMBO} ${task.cpus} $dparams $imp &> log && ln -f Tables/* . && touch Figures/placeholder && ln -f Figures/* .
     """
 }
 process collect_dexseq{

@@ -27,7 +27,7 @@ rule counting:
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
-    params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('COUNT', ""),
+    params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('QUANT', ""),
             ppara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('PERMIT', "--unfiltered-pl"),
             mapp = COUNTBIN,
             quantdir = lambda wildcards, output: os.path.join(str(output.ctsdir), "af_quant")

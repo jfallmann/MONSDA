@@ -29,7 +29,7 @@ rule featurecount_unique:
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
-            cpara = lambda wildcards: tool_params(wildcards.file, None, config, "DAS", DASENV.split('_')[0])['OPTIONS'].get('COUNT', ""),
+            cpara = lambda wildcards: tool_params(wildcards.file, None, config, "DAS", DASENV.split('_')[0])['OPTIONS'].get('QUANT', ""),
             paired   = lambda x: '-p' if DAS_PAIRED == 'paired' else '',
             stranded = lambda x: '-s 1' if DAS_STRANDED == 'fr' else '-s 2' if DAS_STRANDED == 'rf' else '',
             sortmem = get_sortmem

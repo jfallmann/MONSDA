@@ -120,7 +120,7 @@ rule featurecount:
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
-            cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('COUNT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
+            cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('QUANT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if COUNTING_PAIRED == 'paired' else '',
             stranded = lambda x: '-s 1' if COUNTING_STRANDED == 'fr' else '-s 2' if COUNTING_STRANDED == 'rf' else '',
             sortmem = get_sortmem
@@ -136,7 +136,7 @@ rule featurecount_unique:
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
-            cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('COUNT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
+            cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('QUANT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if COUNTING_PAIRED == 'paired' else '',
             stranded = lambda x: '-s 1' if COUNTING_STRANDED == 'fr' else '-s 2' if COUNTING_STRANDED == 'rf' else '',
             sortmem = get_sortmem
@@ -152,7 +152,7 @@ rule featurecount_dedup:
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
-            cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('COUNT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
+            cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('QUANT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if COUNTING_PAIRED == 'paired' else '',
             stranded = lambda x: '-s 1' if COUNTING_STRANDED == 'fr' else '-s 2' if COUNTING_STRANDED == 'rf' else '',
             sortmem = get_sortmem
@@ -168,7 +168,7 @@ rule featurecount_unique_dedup:
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
-            cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('COUNT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
+            cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('QUANT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if COUNTING_PAIRED == 'paired' else '',
             stranded = lambda x: '-s 1' if COUNTING_STRANDED == 'fr' else '-s 2' if COUNTING_STRANDED == 'rf' else '',
             sortmem = get_sortmem

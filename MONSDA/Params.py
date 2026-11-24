@@ -1044,6 +1044,43 @@ def create_skeleton(runner: str, skeleton: str = None) -> None:
             open("JOBS" + os.sep + scriptname + ".commands", "w").close()
 
 
+COUNT_STAGES = ("COUNTING", "DE", "DEU", "DAS", "DTU")
+
+
+def normalize_count_options(options: dict) -> dict:
+    """Normalize the public OPTIONS.QUANT key, folding the legacy OPTIONS.COUNT into it
+
+    Parameters
+    ----------
+    options : dict
+        tool OPTIONS dict, not modified
+
+    Returns
+    -------
+    dict
+        copy of options with the public QUANT key
+    """
+    logid = scriptname + ".Params_normalize_count_options: "
+    if not mu.dict_inst(options):
+        return options
+    opts = OrderedDict(options)
+    quant_set = bool(str(opts.get("QUANT") or "").strip())
+    count_set = bool(str(opts.get("COUNT") or "").strip())
+    if count_set and not quant_set:
+        opts["QUANT"] = opts["COUNT"]
+    elif not quant_set and "QUANT" not in opts and "COUNT" in opts:
+        opts["QUANT"] = opts["COUNT"]
+    opts.pop("COUNT", None)
+    if "COUNT" in options and count_set != quant_set:
+        used = "OPTIONS.QUANT" if quant_set else "OPTIONS.COUNT"
+        log.warning(
+            logid
+            + "OPTIONS.QUANT is the documented key, OPTIONS.COUNT is the legacy fallback; using "
+            + used
+        )
+    return opts
+
+
 @check_run
 def tool_params(sample: str, runstate: str, config: dict, subconf: dict, tool: str = None) -> dict:  # type: ignore
     """Get tool parameters from config file for a specific sample
@@ -1082,6 +1119,9 @@ def tool_params(sample: str, runstate: str, config: dict, subconf: dict, tool: s
         if tool
         else mu.sub_dict(config[subconf], x)
     )
+    if tool and subconf in COUNT_STAGES and mu.dict_inst(mp) and "OPTIONS" in mp:
+        mp = OrderedDict(mp)
+        mp["OPTIONS"] = normalize_count_options(mp["OPTIONS"])
     log.debug(logid + "DONE: " + str(mp))
     return mp
 

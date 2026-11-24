@@ -5,7 +5,7 @@ COUNTREFDIR = "${workflow.workDir}/../"+get_always('COUNTINGREFDIR')
 COUNTANNO = get_always('COUNTINGANNO')
 COUNTPREFIX = get_always('COUNTINGPREFIX') ?: COUNTBIN.split(' ')[0]
 
-COUNTPARAMS = get_always('alevinfry_params_COUNT') ?: ''
+COUNTPARAMS = get_always('alevinfry_params_QUANT') ?: ''
 PERMITPARAMS = get_always('alevinfry_params_PERMIT') ?: '--unfiltered-pl'
 
 //COUNTING PROCESSES

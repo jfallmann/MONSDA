@@ -51,7 +51,7 @@ rule featurecount_unique:
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
     params: countb  = COUNTBIN,
-            cpara  = lambda wildcards: tool_params(wildcards.file, None, config, "DEU", DEUENV.split("_")[0])['OPTIONS'].get('COUNT', ""),
+            cpara  = lambda wildcards: tool_params(wildcards.file, None, config, "DEU", DEUENV.split("_")[0])['OPTIONS'].get('QUANT', ""),
             paired = lambda x: '-p' if DEU_PAIRED == 'paired' else '',
             bins   = BINS,
             stranded = lambda x: '-s 1' if DEU_STRANDED == 'fr' else '-s 2' if DEU_STRANDED == 'rf' else '',

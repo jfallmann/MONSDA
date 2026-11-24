@@ -36,7 +36,7 @@ rule mapping:
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
-    params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('COUNT', ""),
+    params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('QUANT', ""),
             mapp = COUNTBIN,
             nbam = lambda wildcards, output: os.path.join(str(output.ctsdir), "namecollated.bam"),
             prefix = lambda wildcards, output: os.path.join(str(output.ctsdir), "oarfish"),
