@@ -59,6 +59,36 @@ Read the reference files below on demand (do not load all of them up front):
    and where outputs land (tool-key directories under e.g. `MAPPING/<id>/
    <condition>/<combo>/`).
 
+## Preprocessing
+
+UMIs that sit in a separate read instead of inline in R1/R2 have to be
+prepended to the mate before MONSDA sees the data; MONSDA has no step for it.
+
+- From the repo root:
+  `python scripts/Preprocessing/addUMI.py --umi-fastq sample_UMI.fastq.gz sample_R1.fastq.gz`
+- Choose **one** mate according to the library chemistry. If the protocol
+  calls for the UMI on R2, pass `sample_R2.fastq.gz` instead. Configure
+  extraction for that same mate; the script does not infer the chemistry.
+- The script prepends the full UMI sequence *and* its base qualities at the 5'
+  end and keeps the original read header unchanged. UMI and read files must be
+  in the same order with matching names (dnaio validates this and aborts on a
+  mismatch); requires `dnaio >= 0.9`.
+- `--umi-fastq` is not optional for real UMIs: without it the script generates
+  random UMIs, which are synthetic and useless for deduplication.
+- Output lands next to the input as `<name>_umi.fastq.gz`; raw files are never
+  overwritten.
+- Feed it to MONSDA as a separate run: stage the modified mate under
+  `FASTQ/<ID>/<condition>/` with the expected name (`sample_R1.fastq.gz` or
+  `sample_R2.fastq.gz`) and the untouched other mate under its original
+  matched basename. Do not stage the UMI FASTQ as a mate.
+
+Run `addUMI.py` before MONSDA; do not add it to `WORKFLOWS`. For the MONSDA
+`DEDUP` step, select `umitools` (`umi_tools`) and set `OPTIONS.EXTRACT` to the
+`umi_tools extract` barcode pattern for the mate and UMI length you prepended
+(`--bc-pattern` with one `N` per UMI base for R1, `--bc-pattern2` for R2), then
+map and dedup the BAM as usual. With `EXTRACT` empty MONSDA links the FASTQs
+through unchanged.
+
 ## What this buys the user over doing it by hand
 
 - No need to memorize the condition-tree <-> directory-layout mapping or the

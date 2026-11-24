@@ -9,7 +9,7 @@ COUNTANNO = get_always('COUNTINGANNO')
 COUNTPREFIX = get_always('COUNTINGPREFIX') ?: COUNTBIN.split(' ')[0]
 COUNTUIDX?.replace('.idx','') 
 
-COUNTPARAMS = get_always('featurecounts_params_COUNT') ?: ''
+COUNTPARAMS = get_always('countreads_params_QUANT') ?: ''
 FEAT = get_always('COUNTINGFEAT') ?: ''
 COUNTMAP = get_always('COUNTINGMAP') ?: ''
 

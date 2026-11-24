@@ -36,7 +36,7 @@ if paired == 'paired' or paired == 'singlecell':
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
-        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('COUNT', "--chemistry 10xv3 --resolution cr-like --expected-ori fw --unfiltered-pl"),
+        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('QUANT', "--chemistry 10xv3 --resolution cr-like --expected-ori fw --unfiltered-pl"),
                 mapp = COUNTBIN,
                 afhome = lambda wildcards, input: os.path.join(os.path.dirname(str(input.idx)), "af_home"),
                 quantdir = lambda wildcards, output: os.path.join(str(output.ctsdir), "af_quant")

@@ -226,7 +226,7 @@
         {
           "OPTIONS":
           {
-              "COUNT": "-f --fraction -O -M"
+              "QUANT": "-f --fraction -O -M"
           }
         },
         "salmon": {
@@ -314,14 +314,14 @@
         "deseq2": {
           "OPTIONS":
           {
-              "COUNT": "-t gene -g gene_id -f --fraction -O",
+              "QUANT": "-t gene -g gene_id -f --fraction -O",
               "DE": "controlgenes=spike-in.list"
           }
       },
       "edger": {
           "OPTIONS":
           {
-              "COUNT": "-t gene -g gene_id -f --fraction -O",
+              "QUANT": "-t gene -g gene_id -f --fraction -O",
               "DE": "controlgenes=spike-in.list"
           }
         }
@@ -354,7 +354,7 @@
         {
             "OPTIONS":
             {
-                "COUNT": "-t exon -g gene_id -f --fraction -O",
+                "QUANT": "-t exon -g gene_id -f --fraction -O",
                 "DEU": ""
             }
         },
@@ -362,7 +362,7 @@
         {
             "OPTIONS":
             {
-                "COUNT": "-t exon -g gene_id -f --fraction -O",
+                "QUANT": "-t exon -g gene_id -f --fraction -O",
                 "DEU": ""
             }
         }
@@ -395,7 +395,7 @@
         {
           "OPTIONS":
           {
-              "COUNT": "-t exon -g gene_id -f --fraction -O",
+              "QUANT": "-t exon -g gene_id -f --fraction -O",
               "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"
           }
         },
@@ -403,7 +403,7 @@
         {
           "OPTIONS":
           {
-            "COUNT": "-t exon -g gene_id -f --fraction -O",
+            "QUANT": "-t exon -g gene_id -f --fraction -O",
             "DAS": ""
           }
         }

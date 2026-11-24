@@ -380,10 +380,10 @@
     },
     "countreads": {
       "comment": {
-          "COUNT": "Counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options, make sure you use correct options depending on gff/gtf input"
+          "QUANT": "Counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options, make sure you use correct options depending on gff/gtf input"
       },
       "OPTIONS": {
-          "COUNT": "-f --fraction -O -M"
+          "QUANT": "-f --fraction -O -M"
       }
     },
     "salmon": {
@@ -401,33 +401,33 @@
     },
     "oarfish": {
       "comment": {
-          "COUNT": "oarfish options for long-read transcript quantification from a transcriptome-aligned BAM"
+          "QUANT": "oarfish options for long-read transcript quantification from a transcriptome-aligned BAM"
       },
       "OPTIONS":
         {
-            "COUNT": ""
+            "QUANT": ""
         }
     },
     "alevinfry": {
       "comment": {
           "PERMIT": "alevin-fry generate-permit-list options (single-cell only, consumes piscem RAD output)",
-          "COUNT": "alevin-fry quant options"
+          "QUANT": "alevin-fry quant options"
       },
       "OPTIONS":
         {
             "PERMIT": "-d fw --unfiltered-pl",
-            "COUNT": "-r cr-like --use-mtx"
+            "QUANT": "-r cr-like --use-mtx"
         }
     },
     "simpleaf": {
       "comment": {
           "INDEX": "simpleaf index options (single-cell, self-contained index + quant from FASTQ)",
-          "COUNT": "simpleaf quant options"
+          "QUANT": "simpleaf quant options"
       },
       "OPTIONS":
         {
             "INDEX": "",
-            "COUNT": ""
+            "QUANT": ""
         }
     }
   },
@@ -546,28 +546,24 @@
     "deseq2": {
       "comment": {
           "COUNTTOOL": "Gene-level counting tool used for DE, like the TOOLS key but for the counting step. 'featureCounts' for short-read BAMs (default). 'oarfish' aggregates long-read (PacBio/Nanopore) transcript-level quantification from the genome-mapped BAM to gene level.",
-          "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
-          "QUANT": "oarfish quant options, only used when COUNTTOOL is 'oarfish'",
+          "QUANT": "Options for the counting step, flags must match the selected COUNTTOOL (featureCounts or oarfish); QUANT is the documented key, a legacy COUNT key is still accepted",
           "DE": "Options for DE Analysis as key=value pairs. 'controlgenes=<file>' is a file with one spike-in/control gene ID per line. Setting it does not change the standard analysis, it adds two more readings of every contrast: '_norm' uses the control genes as size factors (absolute, per cell fold changes) and '_ruv' adds the RUVg factors of unwanted variation W_1..W_k to the design while keeping the standard normalization (RUVSeq vignette). Control genes are never tested themselves. 'ruvk=auto|<integer>' sets the number of RUVg factors, default 'auto' estimates it from the control genes by a permutation test on the variance spectrum, 'ruvk=0' drops the W covariates so that '_ruv' reproduces the standard branch. The per-k diagnostics are written to *_table_ruv_k_selection.tsv and *_figure_RUV_k_selection.png. 'design=<formula>' sets the model formula per contrast, e.g. 'design=batch+condition' (the leading ~ is optional). It may use condition, type and batch, which are filled from GROUPS, TYPES and BATCHES, must contain condition and must keep the intercept. Without it MONSDA derives the design from the types and batches present in the two groups. Terms that are not estimable for a given contrast are dropped with a warning"
       },
       "OPTIONS": {
           "COUNTTOOL": "featureCounts",
-          "COUNT": "-t gene -g gene_id --fraction -O",
-          "QUANT": "",
+          "QUANT": "-t gene -g gene_id --fraction -O",
           "DE": "controlgenes=spike-in.list"
       }
     },
     "edger": {
       "comment": {
           "COUNTTOOL": "Gene-level counting tool used for DE, like the TOOLS key but for the counting step. 'featureCounts' for short-read BAMs (default). 'oarfish' aggregates long-read (PacBio/Nanopore) transcript-level quantification from the genome-mapped BAM to gene level.",
-          "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
-          "QUANT": "oarfish quant options, only used when COUNTTOOL is 'oarfish'",
+          "QUANT": "Options for the counting step, flags must match the selected COUNTTOOL (featureCounts or oarfish); QUANT is the documented key, a legacy COUNT key is still accepted",
           "DE": "Options for DE Analysis as key=value pairs. 'controlgenes=<file>' is a file with one spike-in/control gene ID per line. Setting it does not change the standard analysis, it adds two more readings of every contrast: '_norm' uses the control genes as size factors (absolute, per cell fold changes) and '_ruv' adds the RUVg factors of unwanted variation W_1..W_k to the design while keeping the standard normalization (RUVSeq vignette). Control genes are never tested themselves. 'ruvk=auto|<integer>' sets the number of RUVg factors, default 'auto' estimates it from the control genes by a permutation test on the variance spectrum, 'ruvk=0' drops the W covariates so that '_ruv' reproduces the standard branch. The per-k diagnostics are written to *_table_ruv_k_selection.tsv and *_figure_RUV_k_selection.png. 'design=<formula>' sets the model formula per contrast, e.g. 'design=batch+condition' (the leading ~ is optional). It may use condition, type and batch, which are filled from GROUPS, TYPES and BATCHES, must contain condition and must keep the intercept. Without it MONSDA derives the design from the types and batches present in the two groups. Terms that are not estimable for a given contrast are dropped with a warning"
       },
       "OPTIONS": {
           "COUNTTOOL": "featureCounts",
-          "COUNT": "-t gene -g gene_id --fraction -O",
-          "QUANT": "",
+          "QUANT": "-t gene -g gene_id --fraction -O",
           "DE": "controlgenes=spike-in.list"
       }
     }
@@ -592,24 +588,24 @@
     "dexseq": {
       "comment": {
           "COUNTTOOL": "Counting tool used for DEU, like the TOOLS key but for the counting step. Only 'featureCounts' (default) is currently supported; kept as an explicit option for consistency/future tool additions.",
-          "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
+          "QUANT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
           "DEU": "Options for DEU Analysis, leave blank unless you know exactly what you are doing"
       },
       "OPTIONS": {
           "COUNTTOOL": "featureCounts",
-          "COUNT": "-t exon -g gene_id -f --fraction -O",
+          "QUANT": "-t exon -g gene_id -f --fraction -O",
           "DEU": ""
       }
     },
     "edger": {
       "comment": {
           "COUNTTOOL": "Counting tool used for DEU, like the TOOLS key but for the counting step. Only 'featureCounts' (default) is currently supported; kept as an explicit option for consistency/future tool additions.",
-          "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
+          "QUANT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
           "DEU": "Options for DEU Analysis, leave blank unless you know exactly what you are doing"
       },
       "OPTIONS": {
           "COUNTTOOL": "featureCounts",
-          "COUNT": "-t exon -g gene_id -f --fraction -O",
+          "QUANT": "-t exon -g gene_id -f --fraction -O",
           "DEU": ""
       }
     }
@@ -634,24 +630,24 @@
     "diego": {
       "comment":{
           "COUNTTOOL": "Counting tool used for DAS, like the TOOLS key but for the counting step. Only 'featureCounts' (default) is currently supported; kept as an explicit option for consistency/future tool additions.",
-          "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
+          "QUANT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
           "DAS": "Options for DAS Analysis"
       },
       "OPTIONS": {
           "COUNTTOOL": "featureCounts",
-          "COUNT": "-t exon -g gene_id -f --fraction -O",
+          "QUANT": "-t exon -g gene_id -f --fraction -O",
           "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"
       }
     },
     "edger": {
       "comment": {
           "COUNTTOOL": "Counting tool used for DAS, like the TOOLS key but for the counting step. Only 'featureCounts' (default) is currently supported; kept as an explicit option for consistency/future tool additions.",
-          "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
+          "QUANT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
           "DAS": "Options for DAS Analysis, leave blank unless you know exactly what you are doing"
       },
       "OPTIONS": {
           "COUNTTOOL": "featureCounts",
-          "COUNT": "-t exon -g gene_id -f --fraction -O",
+          "QUANT": "-t exon -g gene_id -f --fraction -O",
           "DAS": ""
       }
     }

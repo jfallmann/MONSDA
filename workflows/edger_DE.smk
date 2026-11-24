@@ -52,7 +52,7 @@ if COUNTTOOL == 'featureCounts':
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
         params: countb = COUNTBIN,
-                cpara = lambda wildcards: tool_params(wildcards.file, None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('COUNT', ""),
+                cpara = lambda wildcards: tool_params(wildcards.file, None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('QUANT', ""),
                 paired   = lambda x: '-p' if DE_PAIRED == 'paired' else '',
                 stranded = lambda x: '-s 1' if DE_STRANDED == 'fr' else '-s 2' if DE_STRANDED == 'rf' else '',
                 sortmem = get_sortmem,

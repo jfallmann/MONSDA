@@ -10,7 +10,7 @@ COUNTANNO = get_always('COUNTINGANNO')
 COUNTPREFIX = get_always('COUNTINGPREFIX') ?: COUNTBIN.split(' ')[0]
 
 IDXPARAMS = get_always('simpleaf_params_INDEX') ?: '--ref-type spliced+unspliced'
-COUNTPARAMS = get_always('simpleaf_params_COUNT') ?: '--chemistry 10xv3 --resolution cr-like --expected-ori fw --unfiltered-pl'
+COUNTPARAMS = get_always('simpleaf_params_QUANT') ?: '--chemistry 10xv3 --resolution cr-like --expected-ori fw --unfiltered-pl'
 
 //COUNTING PROCESSES
 

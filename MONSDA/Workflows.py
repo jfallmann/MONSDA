@@ -2602,6 +2602,8 @@ def nf_tool_params(
             if toolenv
             else mu.sub_dict(config[subwork], x)["OPTIONS"]
         )
+        if subwork in mp.COUNT_STAGES:
+            np = mp.normalize_count_options(np)
         if subwork == "QC":
             qcprefix = "POSTQC" if toolenv == "rustqc" else "PREQC"
             tp.append(
@@ -2643,6 +2645,8 @@ def nf_tool_params(
                 toolenv, toolbin = map(str, [sd["ENV"], sd["BIN"]])
 
             np = sd[toolenv.split("_")[0]]["OPTIONS"] if toolenv else sd["OPTIONS"]
+            if subwork in mp.COUNT_STAGES:
+                np = mp.normalize_count_options(np)
             if subwork == "QC":
                 qcprefix = "POSTQC" if toolenv == "rustqc" else "PREQC"
                 tp.append(

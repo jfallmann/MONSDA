@@ -8,11 +8,11 @@ DTUDECOY = get_always('DTUDECOY')
 DTUIDX = get_always('DTUIDX')
 DTUUIDX = get_always('DTUUIDX')
 DTUUIDXNAME = get_always('DTUUIDXNAME')+'.idx'
-COUNTTOOL = get_always('DTUCOUNTTOOL') ?: 'salmon'
+COUNTTOOL = (get_always('spit_DTU_params_COUNTTOOL') ?: get_always('DTUCOUNTTOOL') ?: 'salmon').trim()
 COUNTBIN = COUNTTOOL
 COUNTENV = COUNTTOOL
 IDXPARAMS = get_always('spit_DTU_params_INDEX') ?: ''
-COUNTPARAMS = get_always('spit_DTU_params_COUNT') ?: ''
+COUNTPARAMS = get_always('spit_DTU_params_QUANT') ?: ''
 DTUPARAMS = get_always('spit_DTU_params_DTU') ?: ''
 RUNTERMINUS = (COUNTTOOL != 'salmon') ? '' : (get_always('spit_DTU_params_TERMINUS') ?: '')
 if (COUNTTOOL != 'salmon' && (get_always('spit_DTU_params_TERMINUS') ?: '')?.length() > 0){

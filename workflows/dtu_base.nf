@@ -40,7 +40,7 @@ process salmon_quant{
         oz = fn+"/quant.sf.gz"
         ol = fn+"_counts.gz"
         """
-        $COUNTBIN $COUNTPARAMS quant -p ${task.cpus} -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
+        $COUNTBIN quant -p ${task.cpus} -i $idx $stranded -o $fn $COUNTPARAMS -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }else{
         if (DTUSTRANDED == 'fr' || DTUSTRANDED == 'SF'){
@@ -57,7 +57,7 @@ process salmon_quant{
         oz = fn+"/quant.sf.gz"
         ol = fn+"_counts.gz"
         """
-        $COUNTBIN $COUNTPARAMS quant -p ${task.cpus} -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && ln -fs $oz $ol
+        $COUNTBIN quant -p ${task.cpus} -i $idx $stranded -o $fn $COUNTPARAMS -r $read &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }
 }

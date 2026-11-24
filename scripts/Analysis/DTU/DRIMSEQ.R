@@ -19,6 +19,10 @@ cmp <- args[4]
 combi <- args[5]
 cores <- as.integer(args[6])
 filter <- if (argsLen > 6) args[7] else "min_samps_feature_expr = 1, min_feature_expr = .1, min_samps_gene_expr = 1, min_gene_expr = 1"
+importmode <- if (argsLen > 7 && nzchar(trimws(args[8]))) trimws(args[8]) else "scaledTPM"
+if (!importmode %in% c("no", "scaledTPM")) {
+    stop("unsupported DTU import mode '", importmode, "', expected one of: no, scaledTPM")
+}
 print(args)
 
 ## FUNCS
@@ -65,10 +69,19 @@ tab <- table(txdf$GENEID)
 txdf$ntx <- tab[match(txdf$GENEID, names(tab))]
 
 # get counts
-txi <- tximport(files, type = "salmon", txOut = TRUE, countsFromAbundance = "scaledTPM") 
-cts_all <- txi$counts[gsub("\\.[0-9]+$", "", rownames(txi$counts)) %in% gsub("\\.[0-9]+$", "", txdf$TXNAME), ]
-cts_all <- cts_all[rowSums(cts_all) > 0, ]
+txi <- tximport(files, type = "salmon", txOut = TRUE, countsFromAbundance = importmode)
+cts_all <- txi$counts[gsub("\\.[0-9]+$", "", rownames(txi$counts)) %in% gsub("\\.[0-9]+$", "", txdf$TXNAME), , drop = FALSE]
+cts_all <- cts_all[rowSums(cts_all) > 0, , drop = FALSE]
 rownames(cts_all) <- gsub("\\.[0-9]+$", "", rownames(cts_all))
+dup_ids <- unique(rownames(cts_all)[duplicated(rownames(cts_all))])
+if (length(dup_ids) > 0) {
+    stop(
+        "ambiguous transcript IDs after version stripping: ", length(dup_ids),
+        " duplicated ID(s) in the quantification input, first: ",
+        paste(head(dup_ids, 10), collapse = ", "),
+        "; rename the transcripts so normalized IDs are unique"
+    )
+}
 
 comparisons <- strsplit(cmp, ",")
 
@@ -158,6 +171,11 @@ for (contrast in comparisons[[1]]) {
     )
     filter_string <- ifelse(is.null(filter) || filter == "", default_filter, filter)
     d <- eval(parse(text = paste0("dmFilter(d, ", filter_string, ")")))
+    message(
+        "DTU import mode: ", importmode, "; filter: ", filter_string,
+        "; retained features ", nrow(counts(d)),
+        "; retained genes ", length(unique(counts(d)$gene_id))
+    )
 
     #  QC: Filtering summary table 
     counts_filtered <- counts(d)

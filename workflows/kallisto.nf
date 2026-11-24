@@ -10,7 +10,7 @@ COUNTDECOY = get_always('COUNTINGDECOY')
 COUNTPREFIX = get_always('COUNTINGPREFIX') ?: COUNTBIN.split(' ')[0]
 
 IDXPARAMS = get_always('kallisto_params_INDEX') ?: ''
-COUNTPARAMS = get_always('kallisto_params_COUNT') ?: ''
+COUNTPARAMS = get_always('kallisto_params_QUANT') ?: ''
 
 //COUNTING PROCESSES
 

@@ -19,6 +19,10 @@ cmp <- args[4]
 combi <- args[5]
 cores <- as.integer(args[6])
 filter <- if (argsLen > 6 && nzchar(trimws(args[7]))) args[7] else "min_samps_feature_expr = 1, min_feature_expr = .1, min_samps_gene_expr = 1, min_gene_expr = 1"
+importmode <- if (argsLen > 7 && nzchar(trimws(args[8]))) trimws(args[8]) else "scaledTPM"
+if (!importmode %in% c("no", "scaledTPM")) {
+    stop("unsupported DTU import mode '", importmode, "', expected one of: no, scaledTPM")
+}
 print(args)
 
 
@@ -73,10 +77,19 @@ tab <- table(txdf$GENEID)
 txdf$ntx <- tab[match(txdf$GENEID, names(tab))]
 
 # get counts
-txi <- tximport(files, type = "salmon", txOut = TRUE, countsFromAbundance = "scaledTPM")
+txi <- tximport(files, type = "salmon", txOut = TRUE, countsFromAbundance = importmode)
 quant_ids <- sub("\\.[0-9]+$", "", sub("\\|.*", "", rownames(txi$counts)))
 cts <- txi$counts[quant_ids %in% txdf$TXNAME, , drop = FALSE]
 rownames(cts) <- quant_ids[quant_ids %in% txdf$TXNAME]
+dup_ids <- unique(rownames(cts)[duplicated(rownames(cts))])
+if (length(dup_ids) > 0) {
+    stop(
+        "ambiguous transcript IDs after version stripping: ", length(dup_ids),
+        " duplicated ID(s) in the quantification input, first: ",
+        paste(head(dup_ids, 10), collapse = ", "),
+        "; rename the transcripts so normalized IDs are unique"
+    )
+}
 cts <- cts[rowSums(cts) > 0, , drop = FALSE]
 cts.original <- cts
 
@@ -96,6 +109,7 @@ d <- dmDSdata(counts = counts, samples = sampleData)
 n <- nrow(sampleData)
 n.small <- n / length(levels(sampleData$condition)) # its not really the smallest group, needs to be improved
 eval(parse(text = paste("d <- dmFilter(d,", filter, ")", sep = "")))
+message("DTU import mode: ", importmode, "; filter: ", filter)
 
 ## shows how many of the remaining genes have N isoforms
 # table(table(counts(d)$gene_id))
@@ -154,6 +168,7 @@ for (contrast in comparisons[[1]]) {
     # DEXSeq on DRIMSeq filtering
     sample.data <- DRIMSeq::samples(d)
     count.data <- round(as.matrix(counts(d)[, -c(1:2)]))
+    message("contrast ", contrast_name, ": import mode ", importmode, ", filter ", filter, ", retained features ", nrow(count.data), ", retained genes ", length(unique(counts(d)$gene_id)), ", counts rounded for DEXSeq")
     # The design formula of the DEXSeqDataSet here uses the language “exon” but this should be read as “transcript” for our analysis.
     dxd <- DEXSeqDataSet(
         countData = count.data,

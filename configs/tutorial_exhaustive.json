@@ -313,7 +313,7 @@
                     "countreads": {
                         "OPTIONS":
                         {
-                            "COUNT" : "-f --fraction -O -M"
+                            "QUANT" : "-f --fraction -O -M"
                         }
                     }
                 }
@@ -322,7 +322,7 @@
                 "countreads": {
                     "OPTIONS":
                     {
-                        "COUNT" : "-f --fraction -O -M"
+                        "QUANT" : "-f --fraction -O -M"
                     }
                 }
             }
@@ -371,14 +371,14 @@
                     "deseq2": {
                         "OPTIONS":
                         {
-                            "COUNT": "-O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
+                            "QUANT": "-O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
                             "DE": ""  # Options for DE Analysis
                         }
                     },
                     "edger": {
                         "OPTIONS":
                         {
-                            "COUNT": "-O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
+                            "QUANT": "-O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
                             "DE": ""  # Options for DE Analysis
                         }
                     }
@@ -388,14 +388,14 @@
                 "deseq2": {
                     "OPTIONS":
                     {
-                        "COUNT": "-O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
+                        "QUANT": "-O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
                         "DE": ""  # Options for DE Analysis
                     }
                 },
                 "edger": {
                     "OPTIONS":
                     {
-                        "COUNT": "-O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
+                        "QUANT": "-O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
                         "DE": ""  # Options for DE Analysis
                     }
                 }
@@ -420,14 +420,14 @@
                     "dexseq": {
                         "OPTIONS":
                         {
-                            "COUNT": "-f -O -t exon -g gene_id",  # Options for read counting, independent of COUNTS workflows
+                            "QUANT": "-f -O -t exon -g gene_id",  # Options for read counting, independent of COUNTS workflows
                             "DEU": ""  # Options for DEU Analysis
                         }
                     },
                     "edger": {
                         "OPTIONS":
                         {
-                            "COUNT": "-f -O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
+                            "QUANT": "-f -O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
                             "DEU": ""  # Options for DEU Analysis
                         }
                     }
@@ -437,14 +437,14 @@
                 "dexseq": {
                     "OPTIONS":
                     {
-                        "COUNT": "-f -O -t exon -g gene_id",  # Options for read counting, independent of COUNTS workflows
+                        "QUANT": "-f -O -t exon -g gene_id",  # Options for read counting, independent of COUNTS workflows
                         "DEU": ""  # Options for DEU Analysis
                     }
                 },
                 "edger": {
                     "OPTIONS":
                     {
-                        "COUNT": "-f -O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
+                        "QUANT": "-f -O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
                         "DEU": ""  # Options for DEU Analysis
                     }
                 }
@@ -469,14 +469,14 @@
                     "diego": {
                         "OPTIONS":
                         {
-                            "COUNT": "-f -O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
+                            "QUANT": "-f -O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
                             "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for DAS Analysis
                         }
                     },
                     "edger": {
                         "OPTIONS":
                         {
-                            "COUNT": "-f -O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
+                            "QUANT": "-f -O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
                             "DAS": ""  # Options for DAS Analysis
                         }
                     }
@@ -486,14 +486,14 @@
                 "diego": {
                     "OPTIONS":
                     {
-                        "COUNT": "-f -O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
+                        "QUANT": "-f -O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
                         "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for DAS Analysis
                     }
                 },
                 "edger": {
                     "OPTIONS":
                     {
-                        "COUNT": "-f -O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
+                        "QUANT": "-f -O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
                         "DAS": ""  # Options for DAS Analysis
                     }
                 }

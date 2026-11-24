@@ -35,7 +35,7 @@ if bammode == 'transcriptome':
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
-        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('COUNT', ""),
+        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('QUANT', ""),
                 mapp=COUNTBIN,
                 nbam = lambda wildcards, output: os.path.join(str(output.ctsdir), "namecollated.bam"),
                 linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
@@ -52,7 +52,7 @@ elif bammode == 'genome':
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
-        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('COUNT', ""),
+        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('QUANT', ""),
                 mapp=COUNTBIN,
                 nbam = lambda wildcards, output: os.path.join(str(output.ctsdir), "namecollated.bam"),
                 linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
@@ -69,7 +69,7 @@ elif paired == 'paired':
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
-        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('COUNT', ""),
+        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('QUANT', ""),
                 mapp=COUNTBIN,
                 stranded = lambda x: '-l ISF' if (stranded == 'fr' or stranded == 'ISF') else '-l ISR' if (stranded == 'rf' or stranded == 'ISR') else '-l IU',
                 linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
@@ -85,7 +85,7 @@ else:
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
-        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('COUNT', ""),
+        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('QUANT', ""),
                 mapp=COUNTBIN,
                 stranded = lambda x: '-l SF' if (stranded == 'fr' or stranded == 'SF') else '-l SR' if (stranded == 'rf' or stranded == 'SR') else '-l U',
                 linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))

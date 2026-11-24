@@ -16,11 +16,10 @@ POSTDE_ENABLED = get_always('POSTDE_ENABLED') ?: false
 POSTDE_INPUTS = get_always('POSTDE_INPUTS') ?: ''
 POSTDE_FLAG = POSTDE_ENABLED ? '1' : '0'
 
-COUNTTOOL = get_always('DECOUNTTOOL') ?: 'featureCounts'
+COUNTTOOL = (get_always('deseq2_DE_params_COUNTTOOL') ?: get_always('DECOUNTTOOL') ?: 'featureCounts').trim()
 COUNTBIN = (COUNTTOOL == 'featureCounts') ? 'featureCounts' : COUNTTOOL
 COUNTENV = (COUNTTOOL == 'featureCounts') ? 'countreads_de' : COUNTTOOL
-COUNTPARAMS = get_always('deseq2_DE_params_COUNT') ?: ''
-QUANTPARAMS = get_always('deseq2_DE_params_QUANT') ?: ''
+COUNTPARAMS = get_always('deseq2_DE_params_QUANT') ?: ''
 
 //DE PROCESSES
 
@@ -146,7 +145,7 @@ process oarfish_gene_count{
     os = fn+".counts.summary"
     ol = fn+".log"
     """
-    : > $ol; if [ ! -s $anno ]; then echo "ERROR: decompressed annotation $anno is empty, check source file and filesystem" >> $ol; exit 1; fi; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $ol; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $anno --genome-fasta $genomefa $QUANTPARAMS --output $fn &>> $ol && rm -f namecollated.bam && python3 $BINS/Analysis/oarfish_to_featurecounts.py -i ${fn}.quant -g $anno -s ${fn}_mapped_sorted.bam -o $oc 2>> $ol && touch $os
+    : > $ol; if [ ! -s $anno ]; then echo "ERROR: decompressed annotation $anno is empty, check source file and filesystem" >> $ol; exit 1; fi; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $ol; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $anno --genome-fasta $genomefa $COUNTPARAMS --output $fn &>> $ol && rm -f namecollated.bam && python3 $BINS/Analysis/oarfish_to_featurecounts.py -i ${fn}.quant -g $anno -s ${fn}_mapped_sorted.bam -o $oc 2>> $ol && touch $os
     """
 }
 

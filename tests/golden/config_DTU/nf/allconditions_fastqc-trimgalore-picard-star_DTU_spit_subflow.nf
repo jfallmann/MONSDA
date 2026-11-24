@@ -63,11 +63,11 @@ params.gDTUDECOY = get_always('DTUDECOY')
 params.gDTUIDX = get_always('DTUIDX')
 params.gDTUUIDX = get_always('DTUUIDX')
 params.gDTUUIDXNAME = get_always('DTUUIDXNAME')+'.idx'
-params.gCOUNTTOOL = get_always('DTUCOUNTTOOL') ?: 'salmon'
+params.gCOUNTTOOL = (get_always('spit_DTU_params_COUNTTOOL') ?: get_always('DTUCOUNTTOOL') ?: 'salmon').trim()
 params.gCOUNTBIN = params.gCOUNTTOOL
 params.gCOUNTENV = params.gCOUNTTOOL
 params.gIDXPARAMS = get_always('spit_DTU_params_INDEX') ?: ''
-params.gCOUNTPARAMS = get_always('spit_DTU_params_COUNT') ?: ''
+params.gCOUNTPARAMS = get_always('spit_DTU_params_QUANT') ?: ''
 params.gDTUPARAMS = get_always('spit_DTU_params_DTU') ?: ''
 params.gRUNTERMINUS = (params.gCOUNTTOOL != 'salmon') ? '' : (get_always('spit_DTU_params_TERMINUS') ?: '')
 params.gDTUREPS = get_always('DTUREPS') ?: ''
@@ -165,7 +165,7 @@ process salmon_quant{
         oz = fn+"/quant.sf.gz"
         ol = fn+"_counts.gz"
         """
-        ${params.gCOUNTBIN} ${params.gCOUNTPARAMS} quant -p ${task.cpus} -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
+        ${params.gCOUNTBIN} quant -p ${task.cpus} -i $idx $stranded -o $fn ${params.gCOUNTPARAMS} -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }else{
         if (params.gDTUSTRANDED == 'fr' || params.gDTUSTRANDED == 'SF'){
@@ -182,7 +182,7 @@ process salmon_quant{
         oz = fn+"/quant.sf.gz"
         ol = fn+"_counts.gz"
         """
-        ${params.gCOUNTBIN} ${params.gCOUNTPARAMS} quant -p ${task.cpus} -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && ln -fs $oz $ol
+        ${params.gCOUNTBIN} quant -p ${task.cpus} -i $idx $stranded -o $fn ${params.gCOUNTPARAMS} -r $read &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }
 }
