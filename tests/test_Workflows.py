@@ -477,6 +477,81 @@ def test_make_post_reuses_combinations_across_calls(workdir):
     assert glob.glob(os.path.join("SubPostFlows", "*")), "nf postflow empty after smk call"
 
 
+ILLUMINA_SAMPLES = [
+    "381915_S1",
+    "381915_S10",
+    "381916_S2",
+    "381917_S3",
+    "381918_S4",
+    "381919_S5",
+]
+
+
+@pytest.fixture
+def illumina_workdir(tmp_path):
+    """A temp working directory with real Illumina-style paired FASTQs.
+
+    Only mate files carrying the ``_R1_001``/``_R2_001`` suffix exist, no
+    canonical ``_R1.fastq.gz``/``_R2.fastq.gz`` names.
+    """
+    for item in os.listdir(DATA):
+        if item == "FASTQ":
+            continue
+        os.symlink(DATA / item, tmp_path / item)
+    fastq = tmp_path / "FASTQ" / "Test"
+    fastq.mkdir(parents=True)
+    for sample in ILLUMINA_SAMPLES:
+        for read in ("R1", "R2"):
+            (fastq / f"{sample}_{read}_001.fastq.gz").touch()
+    old = os.getcwd()
+    os.chdir(tmp_path)
+    try:
+        yield tmp_path
+    finally:
+        os.chdir(old)
+
+
+@pytest.mark.parametrize("engine", ["smk", "nf"])
+@pytest.mark.parametrize("subwork", ["DE", "DTU", "TRACKS"])
+def test_postprocess_samples_strip_illumina_mate_suffix(
+    subwork, engine, illumina_workdir
+):
+    """Regression: postprocess SAMPLES kept the _R1_001/_R2_001 mate suffix and
+    reported every paired sample twice (12 IDs instead of 6)."""
+    cfg = _load("config_Test.json")
+    cfg["WORKFLOWS"] = "QC,TRIMMING,DEDUP,MAPPING,DE,DTU,TRACKS"
+    cfg["SETTINGS"]["Test"]["SAMPLES"] = list(ILLUMINA_SAMPLES)
+    cfg["SETTINGS"]["Test"]["GROUPS"] = ["T1", "T2", "T3", "T4", "T5", "T6"]
+    expected = [f"Test/{sample}" for sample in ILLUMINA_SAMPLES]
+
+    conditions = mp.get_conditions(cfg)
+    _pre, sub, _post = mw.get_processes(cfg)
+    combos = mw.get_combo(sub, cfg, conditions)
+    samples = mp.get_samples_postprocess(cfg, subwork)
+    assert sorted(samples) == sorted(expected)
+
+    subdir = "SubPostSnakes" if engine == "smk" else "SubPostFlows"
+    mp.create_skeleton(subdir, None)
+    if engine == "smk":
+        jobs = mw.make_post(
+            subwork, cfg, samples, conditions, subdir, "INFO", combinations=combos
+        )
+    else:
+        jobs = mw.nf_make_post(
+            subwork, cfg, samples, conditions, subdir, "INFO", combinations=combos
+        )
+
+    confos = [Path(job[1]) for job in jobs]
+    assert confos, "generator produced no subconfig"
+    for confo in confos:
+        assert sorted(json.loads(confo.read_text())["SAMPLES"]) == sorted(expected), confo
+
+    for sample in ILLUMINA_SAMPLES:
+        for read in ("R1", "R2"):
+            mate = illumina_workdir / "FASTQ" / "Test" / f"{sample}_{read}_001.fastq.gz"
+            assert mate.is_file(), mate
+
+
 # --------------------------------------------------------------------------- #
 # Golden-file snapshot for the FUSIONS postprocessing step (STAR-Fusion).
 # --------------------------------------------------------------------------- #
