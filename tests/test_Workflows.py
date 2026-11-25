@@ -904,16 +904,13 @@ def _fc_subworkflows(engine, layout, workdir, steps=("COUNTING", "DE", "DEU", "D
 def _fc_flags(text, engine, step, layout):
     """Resolve the featureCounts paired flag of every site in a subworkflow."""
     if engine == "smk":
-        exprs = re.findall(
-            r"paired\s*=\s*lambda x: (.+?) if %s_PAIRED == 'paired' else ''" % step,
-            text,
+        pattern = r"paired\s*=\s*lambda x: '([^']*)' if %s_PAIRED == 'paired' else '([^']*)'"
+    else:
+        pattern = (
+            r"if \(params\.g%sPAIRED == 'paired'\)\{\s*pair = \"([^\"]*)\"\s*\}"
+            r"\s*else\{\s*pair= \"([^\"]*)\"\s*\}"
         )
-        return [eval(expr, {f"{step}_PAIRED": layout}) for expr in exprs]
-    branches = re.findall(
-        r"if \(params\.g%sPAIRED == 'paired'\)\{\s*pair = \"([^\"]*)\"\s*\}"
-        r"\s*else\{\s*pair= \"([^\"]*)\"\s*\}" % step,
-        text,
-    )
+    branches = re.findall(pattern % step, text)
     return [paired if layout == "paired" else single for paired, single in branches]
 
 
