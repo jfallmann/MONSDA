@@ -15,8 +15,8 @@ if COUNTTOOL == 'salmon':
 
     if DTU_PAIRED == 'paired':
         rule simulate_trim:
-            input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R1_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file),
-                    r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R2_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
+            input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=sample_from_wildcard(wildcards.file, SAMPLES)) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R1_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file),
+                    r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=sample_from_wildcard(wildcards.file, SAMPLES)) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R2_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
             output: r1 = "TRIMMED_FASTQ/{scombo}/{file}_R1_trimmed.fastq.gz",
                     r2 = "TRIMMED_FASTQ/{scombo}/{file}_R2_trimmed.fastq.gz"
             threads: 1
@@ -26,7 +26,7 @@ if COUNTTOOL == 'salmon':
 
     else:
         rule simulate_trim:
-            input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
+            input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=sample_from_wildcard(wildcards.file, SAMPLES)) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
             output: r1 = "TRIMMED_FASTQ/{scombo}/{file}_trimmed.fastq.gz"
             threads: 1
             params: filetolink = lambda w, input: "{r}".format(r=os.path.abspath(input.r1))

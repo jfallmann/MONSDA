@@ -52,7 +52,7 @@ rule featurecount_unique:
     threads: MAXTHREAD
     params: countb  = COUNTBIN,
             cpara  = lambda wildcards: tool_params(wildcards.file, None, config, "DEU", DEUENV.split("_")[0])['OPTIONS'].get('QUANT', ""),
-            paired = lambda x: '-p' if DEU_PAIRED == 'paired' else '',
+            paired = lambda x: '-p --countReadPairs' if DEU_PAIRED == 'paired' else '',
             bins   = BINS,
             stranded = lambda x: '-s 1' if DEU_STRANDED == 'fr' else '-s 2' if DEU_STRANDED == 'rf' else '',
             sortmem = get_sortmem

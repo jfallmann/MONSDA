@@ -19,6 +19,7 @@
 # # __file__ fails if someone does os.chdir() before.
 # # sys.argv[0] also fails, because it doesn't not always contain the path.
 
+import bisect
 import csv
 import datetime
 import glob
@@ -32,7 +33,7 @@ import sys
 import traceback as tb
 from collections import OrderedDict, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Optional
+from typing import NamedTuple, Optional
 
 from natsort import natsorted
 from snakemake.common.configfile import load_configfile as _load_configfile
@@ -64,21 +65,66 @@ except Exception:
     print("".join(tbe.format()), file=sys.stderr)
 
 
-def _is_lane_split_file(filename: str, sample: Optional[str] = None) -> bool:
-    """Return True if filename matches lane split naming.
+_FASTQ_SUFFIX = (
+    r"(?:_L(?P<lane1>\d{1,3}))?_[Rr](?P<read>[12])"
+    r"(?:_L(?P<lane2>\d{1,3}))?(?:_(?P<chunk>\d+))?\.fastq\.gz$"
+)
+
+
+class _FastqName(NamedTuple):
+    """Parsed technical suffix of a FASTQ file name."""
+
+    sample: str
+    lane: Optional[int]
+    read: Optional[int]
+    chunk: Optional[int]
+
+
+def _parse_fastq_name(
+    filename: str, sample: Optional[str] = None
+) -> Optional[_FastqName]:
+    """Parse read/lane suffix from a FASTQ file name.
 
     Accepted examples (both orderings):
       Sample_L001_R1.fastq.gz
       Sample_R1_L001.fastq.gz
       Sample_R1_L001_001.fastq.gz
-    """
 
-    if sample:
-        # Match: SAMPLE_[L###_]R[12][_###] or SAMPLE_R[12][_L###][_###]
-        pattern = rf"^{re.escape(sample)}(?:_L\d{{1,3}})?_[Rr][12](?:_L\d{{1,3}})?(?:_\d+)?\.fastq\.gz$"
-    else:
-        pattern = r"^.+_[Rr][12]_L\d{1,3}(?:_\d+)?\.fastq\.gz$|^.+_L\d{1,3}_[Rr][12](?:_\d+)?\.fastq\.gz$"
-    return bool(re.match(pattern, filename))
+    When *sample* is given the pattern is anchored on that configured sample
+    name and the plain ``Sample.fastq.gz`` stem is accepted as well.
+    """
+    base = os.path.basename(filename)
+    if sample is not None and base == sample + ".fastq.gz":
+        return _FastqName(sample, None, None, None)
+    prefix = re.escape(sample) if sample is not None else r"(?P<sample>.+?)"
+    match = re.match(rf"^{prefix}{_FASTQ_SUFFIX}", base)
+    if not match:
+        return None
+    lane = match.group("lane1") or match.group("lane2")
+    chunk = match.group("chunk")
+    return _FastqName(
+        sample if sample is not None else match.group("sample"),
+        int(lane) if lane else None,
+        int(match.group("read")),
+        int(chunk) if chunk else None,
+    )
+
+
+def _is_lane_split_file(filename: str, sample: Optional[str] = None) -> bool:
+    """Return True if filename matches lane split naming."""
+    parsed = _parse_fastq_name(filename, sample)
+    return bool(parsed and parsed.lane is not None)
+
+
+def _split_index(filename: str) -> tuple:
+    """Return the (lane, chunk) ordering key of a split FASTQ name."""
+    parsed = _parse_fastq_name(filename)
+    if not parsed:
+        return (sys.maxsize, sys.maxsize)
+    return (
+        parsed.lane if parsed.lane is not None else sys.maxsize,
+        parsed.chunk if parsed.chunk is not None else sys.maxsize,
+    )
 
 
 def _matches_sample_fastq(filename: str, sample: str) -> bool:
@@ -88,15 +134,7 @@ def _matches_sample_fastq(filename: str, sample: str) -> bool:
       - SAMPLE_L###_R[12] (standard Illumina)
       - SAMPLE_R[12]_L### (alternative)
     """
-    return (
-        bool(
-            re.match(
-                rf"^{re.escape(sample)}(?:_L\d{{1,3}})?_[Rr][12](?:_L\d{{1,3}})?(?:_\d+)?\.fastq\.gz$",
-                filename,
-            )
-        )
-        or filename == sample + ".fastq.gz"
-    )
+    return _parse_fastq_name(filename, sample) is not None
 
 
 def _strip_fastq_sample_name(filename: str) -> str:
@@ -106,50 +144,125 @@ def _strip_fastq_sample_name(filename: str) -> str:
       - SAMPLE_L###_R[12][_###]
       - SAMPLE_R[12]_L###[_###]
     """
-    base = os.path.basename(filename)
-    return re.sub(
-        r"(?:_L\d{1,3})?_[Rr][12](?:_L\d{1,3})?(?:_\d+)?\.fastq\.gz$|\.fastq\.gz$",
-        "",
-        base,
-    )
+    parsed = _parse_fastq_name(filename)
+    if parsed:
+        return parsed.sample
+    return re.sub(r"\.fastq\.gz$", "", os.path.basename(filename))
 
 
 def _filter_lane_files_when_merged_exists(files: list) -> list:
-    """Drop lane-split FASTQs if canonical merged FASTQ exists for same sample/read.
+    """Drop split or alias FASTQs if canonical merged FASTQ exists for same sample/read.
 
-    Keeps existing behavior for non-lane files and for samples without merged targets.
+    Keeps existing behavior for non-split files and for samples without merged targets.
     Handles both lane orderings: SAMPLE_L###_R# and SAMPLE_R#_L###.
     """
     if not files:
         return files
 
-    # Match both orderings: _L###_R# or _R#_L###
-    lane_patterns = [
-        re.compile(r"^(?P<sample>.+)_L\d{1,3}_[Rr](?P<read>[12])(?:_\d+)?\.fastq\.gz$"),
-        re.compile(r"^(?P<sample>.+)_[Rr](?P<read>[12])_L\d{1,3}(?:_\d+)?\.fastq\.gz$"),
-    ]
     base_names = {os.path.basename(f) for f in files}
     keep = []
 
     for fp in files:
-        bn = os.path.basename(fp)
-        m = None
-        for pat in lane_patterns:
-            m = pat.match(bn)
-            if m:
-                break
-
-        if not m:
+        parsed = _parse_fastq_name(fp)
+        if not parsed or parsed.read is None:
             keep.append(fp)
             continue
 
-        canonical_bn = f"{m.group('sample')}_R{m.group('read')}.fastq.gz"
+        canonical_bn = f"{parsed.sample}_R{parsed.read}.fastq.gz"
+        if os.path.basename(fp) == canonical_bn:
+            keep.append(fp)
+            continue
         canonical_fp = os.path.join(os.path.dirname(fp), canonical_bn)
         if canonical_bn in base_names or os.path.exists(canonical_fp):
             continue
         keep.append(fp)
 
     return keep
+
+
+def _relative_fastq_paths(files: list) -> set:
+    """Reduce FASTQ paths to paths relative to the FASTQ root."""
+    return {str.join(os.sep, s.split(os.sep)[1:]) for s in files}
+
+
+def _sample_ids_from_files(files: list, sample: str) -> set:
+    """Reduce relative FASTQ paths to sample IDs, keeping configured names."""
+    ids = set()
+    for x in files:
+        if _matches_sample_fastq(os.path.basename(x), os.path.basename(sample)):
+            ids.add(sample)
+        else:
+            ids.add(
+                os.path.join(
+                    os.path.dirname(x),
+                    _strip_fastq_sample_name(os.path.basename(x)),
+                )
+            )
+    return ids
+
+
+def _configured_samples(search: str, config: dict) -> list:
+    """Return the configured sample names of one condition."""
+    return natsorted(
+        {
+            x.replace(" ", "")
+            for x in mu.get_from_dict(config["SETTINGS"], search)[0]["SAMPLES"]
+        }
+    )
+
+
+def _fastq_dir_files(directory: str, cache: dict) -> list:
+    """List the merged-preferring FASTQ files of one directory, cached per call."""
+    if directory not in cache:
+        try:
+            names = sorted(os.listdir(directory))
+        except OSError:
+            names = []
+        cache[directory] = _filter_lane_files_when_merged_exists(
+            [os.path.join(directory, n) for n in names if n.endswith(".fastq.gz")]
+        )
+    return cache[directory]
+
+
+def _match_configured_samples(files: list, samples: list) -> dict:
+    """Map FASTQ files to the most specific configured sample they belong to."""
+    bases = [os.path.basename(f) for f in files]
+    matched = {}
+    for _, sample in sorted(enumerate(samples), key=lambda i: (-len(i[1]), i[0])):
+        for index in range(bisect.bisect_left(bases, sample), len(bases)):
+            if not bases[index].startswith(sample):
+                break
+            if files[index] in matched:
+                continue
+            if _matches_sample_fastq(bases[index], sample):
+                matched[files[index]] = sample
+    return matched
+
+
+def _discover_condition(
+    search: str, config: dict, nocheck: str = None, cache: dict = None
+) -> tuple:
+    """Return configured samples and matched FASTQ paths of one condition."""
+    if cache is None:
+        cache = {}
+    samples = _configured_samples(search, config)
+    if nocheck is not None:
+        return samples, [os.sep.join([os.sep.join(search), s]) for s in samples]
+    for depth in range(len(search), len(search) - 2, -1):
+        directory = os.sep.join(["FASTQ"] + list(search[0:depth]))
+        files = _fastq_dir_files(directory, cache)
+        matched = _match_configured_samples(files, samples)
+        if matched:
+            return samples, matched
+        if files:
+            error_msg = (
+                f"No sample files found for condition {os.sep.join(search)}. "
+                f"Expected to find files matching samples {samples} "
+                f"in directory: {os.sep.join(['FASTQ'] + list(search))}"
+            )
+            log.error(scriptname + ".Params_get_samples_from_dir: " + error_msg)
+            raise ValueError(error_msg)
+    return samples, []
 
 
 def samplesheet_to_settings(samplesheet_path: str) -> dict:
@@ -341,21 +454,30 @@ def inject_samplesheet_settings(configfile: str, samplesheet_path: str) -> str:
     return out_path
 
 
-@check_run
 def _merge_lane_files(target: str, lane_candidates: list, logid: str) -> str:
     """Concatenate *lane_candidates* gzip files into *target*.
 
     Returns *target* on success; raises on any I/O error.
     """
-    with open(target, "wb") as outfh:
-        for lane_file in lane_candidates:
-            with open(lane_file, "rb") as infh:
-                shutil.copyfileobj(infh, outfh)
+    tmp = target + ".tmp"
+    try:
+        with open(tmp, "wb") as outfh:
+            for lane_file in lane_candidates:
+                with open(lane_file, "rb") as infh:
+                    shutil.copyfileobj(infh, outfh)
+        os.replace(tmp, target)
+    except Exception:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise
     return target
 
 
 def prepare_lane_split_fastqs(config: dict, max_workers: Optional[int] = None) -> int:
-    """Concatenate lane-split FASTQs into canonical _R1/_R2 files when needed.
+    """Concatenate split FASTQs into canonical files when needed.
+
+    Paired and single-cell samples are merged into ``<id>_R1/_R2.fastq.gz``,
+    single-end samples into ``<id>.fastq.gz``.
 
     Merges are executed in parallel using a ``ThreadPoolExecutor`` so that all
     samples/reads are processed concurrently (I/O-bound work, thread-safe).
@@ -380,52 +502,63 @@ def prepare_lane_split_fastqs(config: dict, max_workers: Optional[int] = None) -
         except (KeyError, TypeError, ValueError):
             max_workers = None  # fall back to ThreadPoolExecutor default
 
-    samples = [os.path.join(x) for x in sampleslong(config, nocheck="1")]
-    log.debug(logid + "Checking lane split files for samples: " + str(samples))
+    cache = {}
+    merge_tasks: list = []
+    targets = set()
 
-    # --- collect all (target, lane_candidates) pairs first ---
-    merge_tasks: list = []  # list of (target, lane_candidates)
-
-    for sample in samples:
-        paired = checkpaired([sample], config)
-        if not paired or not any(x in paired for x in ["paired", "singlecell"]):
-            continue
-
-        sample_dir = os.path.join("FASTQ", os.path.dirname(sample))
-        sample_name = os.path.basename(sample).replace(".fastq.gz", "")
-        if not os.path.isdir(sample_dir):
-            continue
-
-        for read in ["1", "2"]:
-            # Find lane files in either format: SAMPLE_L###_R# or SAMPLE_R#_L###
-            lane_candidates = sorted(
-                set(
-                    f
-                    for pattern_glob in [
-                        os.path.join(sample_dir, f"{sample_name}_L*_R{read}*.fastq.gz"),
-                        os.path.join(sample_dir, f"{sample_name}_R{read}_L*.fastq.gz"),
-                    ]
-                    for f in glob.glob(pattern_glob)
-                    if _is_lane_split_file(os.path.basename(f), sample_name)
-                )
-            )
-
-            if len(lane_candidates) < 1:
+    for search in [
+        list(k) for k in mu.keysets_from_dict(config["SETTINGS"], "SAMPLES")
+    ]:
+        samples, matched = _discover_condition(search, config, None, cache)
+        sequencing = str(
+            mu.sub_dict(config["SETTINGS"], search).get("SEQUENCING") or ""
+        ).split(",")[0]
+        reads = (
+            ["1", "2"]
+            if "paired" in sequencing or "singlecell" in sequencing
+            else ["1"]
+        )
+        by_sample = defaultdict(list)
+        for path, sample in matched.items():
+            by_sample[sample].append(path)
+        for sample in samples:
+            if sample not in by_sample:
                 continue
-
-            target = os.path.join(sample_dir, f"{sample_name}_R{read}.fastq.gz")
-            if os.path.exists(target):
+            sample_dir = os.path.dirname(by_sample[sample][0])
+            for read in reads:
+                candidates = []
+                for path in by_sample[sample]:
+                    parsed = _parse_fastq_name(path, sample)
+                    if parsed and parsed.read == int(read):
+                        candidates.append(path)
+                if not candidates:
+                    continue
+                if "paired" in sequencing or "singlecell" in sequencing:
+                    target = os.path.join(sample_dir, f"{sample}_R{read}.fastq.gz")
+                else:
+                    target = os.path.join(sample_dir, f"{sample}.fastq.gz")
+                if target in targets:
+                    continue
+                targets.add(target)
+                if os.path.exists(target):
+                    log.info(
+                        logid
+                        + f"Found split files for {sample} R{read}, but target already exists: {target} (keeping existing file)"
+                    )
+                    continue
                 log.info(
                     logid
-                    + f"Found lane-split files for {sample_name} R{read}, but target already exists: {target} (keeping existing file)"
+                    + f"Concatenating {len(candidates)} split files into {target}"
                 )
-                continue
-
-            log.info(
-                logid
-                + f"Concatenating {len(lane_candidates)} lane files into {target}"
-            )
-            merge_tasks.append((target, lane_candidates))
+                merge_tasks.append(
+                    (
+                        target,
+                        sorted(
+                            candidates,
+                            key=lambda f: (_split_index(f), os.path.basename(f)),
+                        ),
+                    )
+                )
 
     if not merge_tasks:
         log.debug(logid + "No lane-split FASTQ files required concatenation")
@@ -470,46 +603,37 @@ def get_samples(config: dict) -> list():
         list of samples found and checked
     """
     logid = scriptname + ".Params_get_samples: "
-    SAMPLES = [os.path.join(x) for x in sampleslong(config)]
-    log.debug(logid + "SAMPLES_LONG: " + str(SAMPLES))
-    check = [
-        os.path.join("FASTQ", str(x).replace(".fastq.gz", "") + "*.fastq.gz")
-        for x in SAMPLES
-    ]
+    cache = {}
     RETSAMPLES = list()
-    for i in range(len(check)):
-        s = check[i]
-        log.debug(logid + "SEARCHING: " + s)
-        paired = checkpaired([SAMPLES[i]], config)
-        log.debug(logid + "PAIRED: " + str(paired))
-        f = glob.glob(s)
-        f = _filter_lane_files_when_merged_exists(f)
-        log.debug(logid + "SAMPLECHECK: " + str(f))
-        if f:
-            f = list(set([str.join(os.sep, s.split(os.sep)[1:]) for s in f]))
-            if "paired" not in paired:
+    for search in [
+        list(k) for k in mu.keysets_from_dict(config["SETTINGS"], "SAMPLES")
+    ]:
+        samples, matched = _discover_condition(search, config, None, cache)
+        log.debug(logid + "SAMPLECHECK: " + str(matched))
+        if not matched:
+            continue
+        sequencing = str(
+            mu.sub_dict(config["SETTINGS"], search).get("SEQUENCING") or ""
+        ).split(",")[0]
+        log.debug(logid + "PAIRED: " + sequencing)
+        by_sample = defaultdict(list)
+        for path, sample in matched.items():
+            by_sample[sample].append(path)
+        for sample in samples:
+            if sample not in by_sample:
+                continue
+            f = sorted(_relative_fastq_paths(by_sample[sample]))
+            if "paired" not in sequencing:
                 RETSAMPLES.extend(
-                    list(
-                        set(
-                            [
-                                os.path.join(
-                                    os.path.dirname(s),
-                                    re.sub(
-                                        r"_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz",
-                                        "",
-                                        os.path.basename(s),
-                                    ),
-                                )
-                                for s in f
-                            ]
+                    sorted(
+                        _sample_ids_from_files(
+                            f, os.sep.join(list(search) + [sample])
                         )
                     )
                 )
                 log.debug(logid + "PAIREDSAMPLES: " + str(f))
             else:
                 RETSAMPLES.extend([x.replace(".fastq.gz", "") for x in f])
-        else:
-            log.debug(logid + "SAMPLECHECK: " + str(f))
     log.debug(logid + "SAMPLETEST: " + str(RETSAMPLES))
     if len(RETSAMPLES) < 1:
         log.error(logid + "No samples found, please check config file")
@@ -536,55 +660,28 @@ def get_samples_postprocess(config: dict, subwork: str) -> list:
         list of samples found and checked
     """
     logid = scriptname + ".Params_get_samples_postprocess: "
-    SAMPLES = [
-        os.path.join(x)
-        for x in sampleslong(config)
-        if len(mu.get_from_dict(config[subwork], conditiononly(x, config))) > 0
-        and (
-            not config[subwork].get("EXCLUDE")
-            or os.path.basename(x) not in config[subwork]["EXCLUDE"]
-        )
-    ]  # only those samples where postprocessing steps are defined for in config, should we make this a per condition check?
-    log.debug(logid + "SAMPLES_LONG: " + str(SAMPLES))
-    check = [
-        os.path.join("FASTQ", str(x).replace(".fastq.gz", "") + "*.fastq.gz")
-        for x in SAMPLES
-    ]
+    cache = {}
     RETSAMPLES = list()
-    for i in range(len(check)):
-        s = check[i]
-        paired = checkpaired([SAMPLES[i]], config)
-        log.debug(logid + "PAIRED: " + str(paired))
-        f = glob.glob(s)
-        f = _filter_lane_files_when_merged_exists(f)
-        log.debug(logid + "SAMPLECHECK: " + str(f))
-        if f:
-            f = sorted(list(set([str.join(os.sep, s.split(os.sep)[1:]) for s in f])))
-            if "paired" in paired:
-                RETSAMPLES.extend(
-                    sorted(
-                        list(
-                            set(
-                                [
-                                    os.path.join(
-                                        os.path.dirname(s),
-                                        re.sub(
-                                            r"_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz",
-                                            "",
-                                            os.path.basename(s),
-                                        ),
-                                    )
-                                    for s in f
-                                ]
-                            )
-                        )
-                    )
-                )
-                log.debug(logid + "PAIREDSAMPLES: " + str(f))
-            else:
-                RETSAMPLES.extend([x.replace(".fastq.gz", "") for x in f])
-        else:
+    for search in [
+        list(k) for k in mu.keysets_from_dict(config["SETTINGS"], "SAMPLES")
+    ]:
+        samples, matched = _discover_condition(search, config, None, cache)
+        by_sample = defaultdict(list)
+        for path, sample in matched.items():
+            by_sample[sample].append(path)
+        for sample in samples:
+            qualified = os.sep.join(list(search) + [sample])
+            if not len(
+                mu.get_from_dict(config[subwork], conditiononly(qualified, config))
+            ):
+                continue
+            if config[subwork].get("EXCLUDE") and sample in config[subwork]["EXCLUDE"]:
+                continue
+            if sample not in by_sample:
+                continue
+            f = sorted(_relative_fastq_paths(by_sample[sample]))
             log.debug(logid + "SAMPLECHECK: " + str(f))
+            RETSAMPLES.extend(sorted(_sample_ids_from_files(f, qualified)))
     log.debug(logid + "SAMPLETEST: " + str(RETSAMPLES))
     if len(RETSAMPLES) < 1:
         log.error(
@@ -613,20 +710,17 @@ def check_samples(config: dict) -> bool:
     bool
     """
     logid = scriptname + ".Params_check_samples: "
-    tocheck = [os.path.join(x) for x in sampleslong(config, nocheck=True)]
-    log.debug(logid + "SEARCHING: " + str(tocheck))
-    check = [
-        os.path.join("FASTQ", str(x).replace(".fastq.gz", "") + "*.fastq.gz")
-        for x in tocheck
-    ]
-    for i in range(len(check)):
-        s = check[i]
-        log.debug(logid + "SEARCHING: " + s)
-        f = glob.glob(s)
-        log.debug(logid + "SAMPLECHECK: " + str(f))
-        if f:
-            continue
-        else:
+    cache = {}
+    for search in [
+        list(k) for k in mu.keysets_from_dict(config["SETTINGS"], "SAMPLES")
+    ]:
+        samples = _configured_samples(search, config)
+        directory = os.sep.join(["FASTQ"] + list(search))
+        log.debug(logid + "SEARCHING: " + directory)
+        matched = _match_configured_samples(_fastq_dir_files(directory, cache), samples)
+        log.debug(logid + "SAMPLECHECK: " + str(matched))
+        found = set(matched.values())
+        if any(sample not in found for sample in samples):
             return False
     return True
 
@@ -652,6 +746,124 @@ def download_samples(config: dict) -> list:
     return SAMPLES
 
 
+BASECALL_SIGNAL_SUFFIX = {"guppy": ".fast5", "dorado": ".pod5"}
+
+
+def basecall_caller(config: dict) -> Optional[str]:
+    """Return the basecaller env the config pins, None if it does not pin one."""
+    basecall = config.get("BASECALL")
+    basecall = basecall if isinstance(basecall, dict) else {}
+    tools = [x for x in (basecall.get("TOOLS") or {}) if x in BASECALL_SIGNAL_SUFFIX]
+    for env in (config.get("BASECALLENV"), basecall.get("ENV")):
+        if env in BASECALL_SIGNAL_SUFFIX:
+            return env
+    return tools[0] if len(tools) == 1 else None
+
+
+def _basecall_checked(path: str, sample: str, suffix: str) -> str:
+    """Validate one resolved raw signal file and return its path."""
+    where = "raw signal input " + path + " for sample " + sample + " "
+    if not os.path.isfile(path):
+        raise ValueError(where + "is not a regular file")
+    if not path.endswith(suffix):
+        raise ValueError(where + "does not end in " + suffix)
+    if os.path.getsize(path) == 0:
+        raise ValueError(where + "is empty")
+    return path
+
+
+def _basecall_list(source: str, sample: str, suffix: str, rawdir: str) -> list:
+    """Resolve the loose raw signal files listed in an explicit sample list."""
+    with open(source, "r") as fh:
+        entries = [x.strip() for x in fh if x.strip()]
+    files = list()
+    for number, name in enumerate(entries, 1):
+        where = "entry " + str(number) + " of " + source + " for sample " + sample
+        if os.path.isabs(name):
+            raise ValueError(where + " is absolute, list paths relative to " + rawdir)
+        path = os.path.normpath(os.path.join(rawdir, name))
+        if os.path.relpath(path, rawdir).startswith(os.pardir):
+            raise ValueError(where + " points outside " + rawdir + ": " + name)
+        if path in files:
+            raise ValueError("duplicate entry " + name + " in " + source + " for sample " + sample)
+        files.append(_basecall_checked(path, sample, suffix))
+    if not files:
+        raise ValueError("list " + source + " for sample " + sample + " names no raw signal file")
+    return files
+
+
+def _basecall_files(sample: str, suffix: str, strict: bool = True) -> Optional[list]:
+    """Raw signal files of one configured sample, resolved from its single source."""
+    condition, name = os.path.split(sample)
+    rawdir = os.path.join("RAW", condition)
+    sources = [
+        ("file", os.path.join(rawdir, name + suffix)),
+        ("directory", os.path.join(rawdir, name)),
+        ("list", os.path.join(rawdir, name + suffix + ".list")),
+    ]
+    found = [
+        (kind, path)
+        for kind, path in sources
+        if (os.path.isdir(path) if kind == "directory" else os.path.isfile(path))
+    ]
+    if not found:
+        if not strict:
+            return None
+        raise ValueError(
+            "no raw signal source for sample " + sample + ", expected exactly one of "
+            + ", ".join(path for _, path in sources)
+        )
+    if len(found) > 1 and strict:
+        raise ValueError(
+            "ambiguous raw signal source for sample " + sample + ": "
+            + ", ".join(path for _, path in found)
+            + " all exist, keep exactly one of "
+            + ", ".join(path for _, path in sources)
+        )
+    kind, source = found[0]
+    if kind == "file":
+        return [_basecall_checked(source, sample, suffix)]
+    if kind == "list":
+        return _basecall_list(source, sample, suffix, rawdir)
+    files = [
+        _basecall_checked(os.path.join(root, entry), sample, suffix)
+        for root, _dirs, names in os.walk(source)
+        for entry in names
+        if entry.endswith(suffix)
+    ]
+    if not files:
+        raise ValueError(
+            "raw signal directory " + source + " for sample " + sample
+            + " contains no " + suffix + " files"
+        )
+    return files
+
+
+def basecall_signal_map(config: dict, caller: str = None) -> dict:
+    """Map condition qualified sample IDs to their raw signal files."""
+    caller = caller or basecall_caller(config)
+    if caller not in BASECALL_SIGNAL_SUFFIX:
+        raise ValueError(
+            "no basecaller selected, set BASECALLENV or a single BASECALL TOOLS entry to one of "
+            + ", ".join(sorted(BASECALL_SIGNAL_SUFFIX))
+        )
+    suffix = BASECALL_SIGNAL_SUFFIX[caller]
+    samples = natsorted(os.path.join(x) for x in sampleslong(config, nocheck=True))
+    if not samples:
+        raise ValueError("no samples configured for BASECALL")
+    signalmap = OrderedDict((x, natsorted(_basecall_files(x, suffix))) for x in samples)
+    owner = dict()
+    for sample, files in signalmap.items():
+        for path in files:
+            real = os.path.realpath(path)
+            if owner.setdefault(real, sample) != sample:
+                raise ValueError(
+                    "raw signal input " + path + " is claimed by samples "
+                    + owner[real] + " and " + sample
+                )
+    return dict(signalmap)
+
+
 @check_run
 def basecall_samples(config: dict) -> list:
     """Check and return samples according to sample list on config.json
@@ -667,30 +879,32 @@ def basecall_samples(config: dict) -> list:
         list of samples found and checked
     """
     logid = scriptname + ".Params_basecall_samples: "
-    SAMPLES = [os.path.join(x) for x in sampleslong(config, nocheck=True)]
-    log.debug(logid + "SAMPLES_LONG: " + str(SAMPLES))
-    check = [
-        os.path.join("RAW", str(x).replace(".fast5", "") + "*.fast5") for x in SAMPLES
-    ]
-    check.extend(
-        [os.path.join("RAW", str(x).replace(".pod5", "") + "*.pod5") for x in SAMPLES]
-    )
-    RETSAMPLES = list()
-    for i in range(len(check)):
-        s = check[i]
-        log.debug(logid + "SEARCHING: " + s)
-        f = glob.glob(s)
-        log.debug(logid + "SAMPLECHECK: " + str(f))
-        if f:
-            f = list(set([str.join(os.sep, s.split(os.sep)[1:]) for s in f]))
-            RETSAMPLES.extend([x.replace(".fast5", "").replace(".pod5", "") for x in f])
+    caller = basecall_caller(config)
+    try:
+        RETSAMPLES = (
+            list(basecall_signal_map(config, caller))
+            if caller
+            else [
+                sample
+                for sample in (
+                    os.path.join(x) for x in sampleslong(config, nocheck=True)
+                )
+                if any(
+                    _basecall_files(sample, suffix, strict=False)
+                    for suffix in sorted(set(BASECALL_SIGNAL_SUFFIX.values()))
+                )
+            ]
+        )
+    except ValueError as err:
+        log.error(logid + str(err))
+        sys.exit(1)
     log.debug(logid + "SAMPLETEST: " + str(RETSAMPLES))
     if len(RETSAMPLES) < 1:
         log.error(logid + "No samples found, please check config file")
         sys.exit(1)
 
     log.debug(logid + "SAMPLES: " + str(RETSAMPLES))
-    return list(set(RETSAMPLES))
+    return natsorted(RETSAMPLES)
 
 
 @check_run
@@ -737,127 +951,36 @@ def get_samples_from_dir(search: str, config: dict, nocheck: str = None) -> list
         list of samples found
     """
     logid = scriptname + ".Params_get_samples_from_dir: "
-    samples = [
-        x.replace(" ", "")
-        for x in list(set(mu.get_from_dict(config["SETTINGS"], search)[0]["SAMPLES"]))
-    ]
+    samples, matched = _discover_condition(search, config, nocheck, {})
     log.debug(logid + f"Samples: {samples}, Search: {search}, Check: {nocheck}")
     if nocheck is not None:
-        samples = [os.sep.join([os.sep.join(search[0:]), s]) for s in samples]
-        return list(set(samples))
-    for x in range(
-        len(search), len(search) - 2, -1
-    ):  # For arbitrary depth of ics we append subdirectories until samples are found, maximum of one setting additional to file path is allowed
-        pat = os.sep.join(["FASTQ", os.sep.join(search[0:x]), "*.fastq.gz"])
-        log.debug(logid + "REGEX: " + str(pat) + "\t" + "SAMPLES: " + str(samples))
-        check = natsorted(glob.glob(pat), key=lambda y: y.lower())
-        check = _filter_lane_files_when_merged_exists(check)
-        log.debug(logid + "check: " + str(check))
-        if len(check) > 0:
-            ret = list()
-            clean = list()
-            for (
-                c
-            ) in (
-                check
-            ):  # If sample fits glob pattern but is not actually in the part of the config we are looking at this needs to be checked as checkpaired returns None otherwise, e.g. Condition1 has Sample abc_R1.fastq and Condition2 has Sample abcd_R1.fastq
-                log.debug(logid + "check: " + str(c))
-                x = c.split(os.sep)[-1]
-                for s in samples:
-                    log.debug(logid + "x: " + str(x))
-                    log.debug(logid + "sample: " + str(s))
-                    if _matches_sample_fastq(x, s):
-                        log.debug(
-                            logid
-                            + "FOUND: "
-                            + s
-                            + " matching accepted FASTQ naming"
-                            + " in "
-                            + x
-                        )
-                        clean.append(c)
-                        break
-            log.debug(logid + "checkclean: " + str(clean))
-            
-            # Check if any samples were found in the clean list
-            if not clean:
-                search_dir = os.sep.join(["FASTQ"] + search)
-                error_msg = (
-                    f"No sample files found for condition {os.sep.join(search)}. "
-                    f"Expected to find files matching samples {samples} "
-                    f"in directory: {search_dir}"
+        return list(set(matched))
+    if matched:
+        sequencing = str(
+            mu.sub_dict(config["SETTINGS"], search).get("SEQUENCING") or ""
+        ).split(",")[0]
+        paths = natsorted(matched, key=lambda y: y.lower())
+        if "paired" in sequencing or "singlecell" in sequencing:
+            ret = list(
+                dict.fromkeys(
+                    os.sep.join(
+                        [
+                            os.sep.join(os.path.dirname(s).split(os.sep)[1:]),
+                            _strip_fastq_sample_name(os.path.basename(s)),
+                        ]
+                    )
+                    for s in paths
                 )
-                log.error(logid + error_msg)
-                raise ValueError(error_msg)
-            
-            paired = checkpaired(
-                [os.sep.join([os.sep.join(search), clean[0].split(os.sep)[-1]])], config
             )
-            if paired is not None and "paired" in paired or "singlecell" in paired:
-                log.debug(
-                    logid
-                    + "SEARCHING: "
-                    + str(
-                        [
-                            os.sep.join(
-                                [
-                                    os.sep.join(os.path.dirname(s).split(os.sep)[1:]),
-                                    _strip_fastq_sample_name(os.path.basename(s)),
-                                ]
-                            )
-                            for s in clean
-                        ]
-                    )
+        else:
+            ret = list(
+                dict.fromkeys(
+                    os.sep.join(s.split(os.sep)[1:]).replace(".fastq.gz", "")
+                    for s in paths
                 )
-                ret.extend(
-                    list(
-                        set(
-                            [
-                                os.sep.join(
-                                    [
-                                        os.sep.join(
-                                            os.path.dirname(s).split(os.sep)[1:]
-                                        ),
-                                        _strip_fastq_sample_name(
-                                            os.path.basename(s)
-                                        ),
-                                    ]
-                                )
-                                for s in clean
-                            ]
-                        )
-                    )
-                )
-                log.debug(logid + "FOUND: " + str(ret))
-                renamelist = [
-                    re.sub(r"_r\d", lambda pat: pat.group(1).upper(), s) for s in ret
-                ]
-                for i in range(len(renamelist)):
-                    if renamelist[i] != ret[i]:
-                        log.warning(
-                            "SAMPLE NAMES CONTAIN LOWER CASE r1/r2 INSTEAD OF R1/R2 FOR PAIRED END SEQUENCING, THEY WILL BE RENAMED"
-                        )
-                        os.rename(ret[i], renamelist[i])
-            else:
-                log.debug(
-                    logid
-                    + "SEARCHING: "
-                    + str(
-                        [
-                            os.sep.join(s.split(os.sep)[1:]).replace(".fastq.gz", "")
-                            for s in clean
-                        ]
-                    )
-                )
-                ret.extend(
-                    [
-                        os.sep.join(s.split(os.sep)[1:]).replace(".fastq.gz", "")
-                        for s in clean
-                    ]
-                )
-
-            log.debug(logid + "RETURN: " + str(ret))
-            return list(set(ret))
+            )
+        log.debug(logid + "RETURN: " + str(ret))
+        return ret
     log.error(logid + "NO SAMPLES FOUND")
     return list()
 
@@ -1459,6 +1582,45 @@ def sample_from_path(path: str) -> str:
     """
     ret = str(os.path.join(os.path.split(str(path))[-1]))
     return ret
+
+
+def sample_from_wildcard(sample: str, samples: list) -> str:
+    """Resolve a wildcard sample identifier to the matching entry of samples.
+
+    Parameters
+    ----------
+    sample : str
+        sample or condition qualified sample name taken from a wildcard
+    samples : list
+        sample names as returned by sampleslong
+
+    Returns
+    -------
+    str
+        the entry of samples that names exactly this sample
+    """
+    wanted = str(sample)
+    candidates = list(dict.fromkeys(str(x) for x in samples))
+    if os.sep in wanted:
+        if wanted in candidates:
+            return wanted
+        raise ValueError(
+            "sample " + wanted + " not found in configured samples " + str(samples)
+        )
+    matches = [x for x in candidates if os.path.basename(x) == wanted]
+    if not matches:
+        raise ValueError(
+            "sample " + wanted + " not found in configured samples " + str(samples)
+        )
+    if len(matches) > 1:
+        raise ValueError(
+            "sample "
+            + wanted
+            + " is ambiguous, candidates: "
+            + ", ".join(matches)
+            + "; use a condition qualified sample ID"
+        )
+    return matches[0]
 
 
 @check_run

@@ -53,7 +53,7 @@ if COUNTTOOL == 'featureCounts':
         threads: MAXTHREAD
         params: countb = COUNTBIN,
                 cpara = lambda wildcards: tool_params(wildcards.file, None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('QUANT', ""),
-                paired   = lambda x: '-p' if DE_PAIRED == 'paired' else '',
+                paired   = lambda x: '-p --countReadPairs' if DE_PAIRED == 'paired' else '',
                 stranded = lambda x: '-s 1' if DE_STRANDED == 'fr' else '-s 2' if DE_STRANDED == 'rf' else '',
                 sortmem = get_sortmem,
                 prefix = lambda wildcards: "DE/"+combo+"/Featurecounts/"+wildcards.file

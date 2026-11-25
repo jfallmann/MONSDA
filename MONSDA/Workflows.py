@@ -26,6 +26,7 @@ import itertools
 import logging
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -1982,15 +1983,13 @@ def nf_fetch_params(
         BINS = binpath
 
     MAXTHREAD = int(config["MAXTHREADS"])
-    SAMPLES = (
-        [os.path.join(x) for x in mp.sampleslong(config)]
-        if not config.get("FETCH", False)
-        else (
-            [os.path.join(x) for x in mp.download_samples(config)]
-            if not config.get("BASECALL", False)
-            else [os.path.join(x) for x in mp.basecall_samples(config)]
-        )
-    )
+    # same precedence as header.smk: BASECALL wins over FETCH over plain FASTQ
+    if config.get("BASECALL", False):
+        SAMPLES = [os.path.join(x) for x in mp.basecall_samples(config)]
+    elif config.get("FETCH", False):
+        SAMPLES = [os.path.join(x) for x in mp.download_samples(config)]
+    else:
+        SAMPLES = [os.path.join(x) for x in mp.sampleslong(config)]
     if len(SAMPLES) < 1:
         log.error(logid + "No samples found, please check config file")
         sys.exit(logid + "ERROR: No samples found, please check config file")
@@ -2005,7 +2004,7 @@ def nf_fetch_params(
 
     # Parse SETTINGS
     REFERENCE = SETTINGS.get("REFERENCE")
-    REFDIR = str(os.path.dirname(REFERENCE))
+    REFDIR = str(os.path.dirname(REFERENCE)) if REFERENCE else ""
     INDEX = SETTINGS.get("INDEX")
     INDEX2 = SETTINGS.get("INDEX2")
     UIDX = SETTINGS.get("UIDX")
@@ -3026,6 +3025,16 @@ def nf_make_pre(
                 tpl = " ".join(tp)
                 combi = None
                 para = nf_fetch_params(confo, condition, combi)
+                if subwork == "BASECALL":
+                    manifest = os.path.splitext(nfo)[0] + ".signals.json"
+                    if writeout:
+                        dump_if_different(
+                            manifest,
+                            mp.basecall_signal_map(
+                                sconf, sconf.get("BASECALLENV") or toolenv
+                            ),
+                        )
+                    para["BASECALL_MANIFEST"] = shlex.quote(manifest)
 
                 jobs.append([nfo, confo, tpl, para])
 

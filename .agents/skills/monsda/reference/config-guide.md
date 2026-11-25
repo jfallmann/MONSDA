@@ -64,10 +64,30 @@ Snakemake's own `--omit-from <rule>` on the command line instead of editing
   (MONSDA looks one level above the deepest leaf for input, so adding a
   `SETTING` sub-level for e.g. benchmarking different tool params does not
   require duplicating the FASTQ files).
-- `SAMPLES`: list of sample basenames, no file extension. For paired-end,
-  list the name once without `_R1`/`_R2` — MONSDA appends those
-  automatically and requires files to end in `_R1.fastq.gz`/`_R2.fastq.gz`
-  (single-end: `<name>.fastq.gz`).
+- `SAMPLES`: one entry per sample, no file extension. What the entry means
+  depends on `SEQUENCING`:
+  - `paired` and `singlecell`: the bare `<id>` of a pair
+    `<id>_R1.fastq.gz`/`<id>_R2.fastq.gz`. MONSDA derives the `_R1`/`_R2`
+    suffixes itself, so read tags never appear in the config.
+  - `single`: the file stem, i.e. the name without `.fastq.gz`
+    (`<id>.fastq.gz`). If that stem itself ends in a literal `_R1`
+    (`sample_R1.fastq.gz`), the `_R1` is part of the sample name and is kept.
+  - Lane-split files (`<id>_L001_R1.fastq.gz`, and the older reversed
+    `<id>_R1_L001.fastq.gz`) are concatenated into the canonical
+    `<id>_R1.fastq.gz`/`<id>_R2.fastq.gz` for `paired`/`singlecell` and into
+    `<id>.fastq.gz` for `single`, so no manual renaming is needed.
+  - Illumina BCL Convert writes `<Sample_ID>_S#_L00#_R#_001.fastq.gz`, or
+    without the lane part under `--no-lane-splitting`. One entry covers all
+    of it: `381915_S1_L001_R1_001.fastq.gz` and
+    `381915_S1_L002_R2_001.fastq.gz` are both sample `381915_S1`. Keep the
+    `S#` sample number as part of the name; the trailing `_001` is a file
+    counter, not a sample or replicate.
+  - Identifiers are not validated, but keep the metadata tokens `_L<digits>`,
+    `_R1`/`_R2` and `_001` out of a biological label (`Tumor-L001`, not
+    `Tumor_L001`), since they cannot be told apart from file-name syntax.
+    Keep identifiers unique across the project; if the same basename is
+    reused in different condition directories, the condition position in the
+    tree qualifies it, so do not type the condition into `SAMPLES`.
 - `SEQUENCING`: `single`, `paired`, or `singlecell`; optionally append
   comma-separated strandedness (`rf` or `fr`, see RSeQC `infer_experiment.py`
   convention) e.g. `"paired,fr"`. Leave strandedness empty if unstranded —

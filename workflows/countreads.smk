@@ -30,8 +30,8 @@ else:
 
 if paired == 'paired':
     rule count_fastq:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-                r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+        input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=sample_from_wildcard(wildcards.file, SAMPLES)),
+                r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=sample_from_wildcard(wildcards.file, SAMPLES)),
         output: r1 = "COUNTS/{combo}/{file}_R1_raw_fq.count",
                 r2 = "COUNTS/{combo}/{file}_R2_raw_fq.count"
         log:    "LOGS/{combo}/{file}/COUNTING/countreads/countfastq.log"
@@ -53,7 +53,7 @@ if paired == 'paired':
 
 else:
     rule count_fastq:
-        input:  r1 = lambda wildcards: expand("FASTQ/{rawfile}.fastq.gz", rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+        input:  r1 = lambda wildcards: expand("FASTQ/{rawfile}.fastq.gz", rawfile=sample_from_wildcard(wildcards.file, SAMPLES))
         output: r1 = "COUNTS/{combo}/{file}_raw_fq.count"
         log:    "LOGS/{combo}/{file}/COUNTING/countreads/countfastq.log"
         conda:  "base.yaml"
@@ -121,7 +121,7 @@ rule featurecount:
     params: countb = COUNTBIN,
             anno = ANNOTATION,
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('QUANT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
-            paired = lambda x: '-p' if COUNTING_PAIRED == 'paired' else '',
+            paired = lambda x: '-p --countReadPairs' if COUNTING_PAIRED == 'paired' else '',
             stranded = lambda x: '-s 1' if COUNTING_STRANDED == 'fr' else '-s 2' if COUNTING_STRANDED == 'rf' else '',
             sortmem = get_sortmem
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.cts} && mv {output.t}.summary {output.cts}.summary && cp -f {output.cts}.summary $(dirname {log})/"
@@ -137,7 +137,7 @@ rule featurecount_unique:
     params: countb = COUNTBIN,
             anno = ANNOTATION,
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('QUANT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
-            paired = lambda x: '-p' if COUNTING_PAIRED == 'paired' else '',
+            paired = lambda x: '-p --countReadPairs' if COUNTING_PAIRED == 'paired' else '',
             stranded = lambda x: '-s 1' if COUNTING_STRANDED == 'fr' else '-s 2' if COUNTING_STRANDED == 'rf' else '',
             sortmem = get_sortmem
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.cts} && mv {output.t}.summary {output.cts}.summary && cp -f {output.cts}.summary $(dirname {log})/"
@@ -153,7 +153,7 @@ rule featurecount_dedup:
     params: countb = COUNTBIN,
             anno = ANNOTATION,
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('QUANT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
-            paired = lambda x: '-p' if COUNTING_PAIRED == 'paired' else '',
+            paired = lambda x: '-p --countReadPairs' if COUNTING_PAIRED == 'paired' else '',
             stranded = lambda x: '-s 1' if COUNTING_STRANDED == 'fr' else '-s 2' if COUNTING_STRANDED == 'rf' else '',
             sortmem = get_sortmem
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.cts} && mv {output.t}.summary {output.cts}.summary && cp -f {output.cts}.summary $(dirname {log})/"
@@ -169,7 +169,7 @@ rule featurecount_unique_dedup:
     params: countb = COUNTBIN,
             anno = ANNOTATION,
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('QUANT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
-            paired = lambda x: '-p' if COUNTING_PAIRED == 'paired' else '',
+            paired = lambda x: '-p --countReadPairs' if COUNTING_PAIRED == 'paired' else '',
             stranded = lambda x: '-s 1' if COUNTING_STRANDED == 'fr' else '-s 2' if COUNTING_STRANDED == 'rf' else '',
             sortmem = get_sortmem
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.cts} && mv {output.t}.summary {output.cts}.summary && cp -f {output.cts}.summary $(dirname {log})/"

@@ -16,7 +16,7 @@ for x in cmd_subfolder:
     if x not in sys.path:
         sys.path.insert(0, x)
 from MONSDA.Logger import makelogdir, setup_logger
-from MONSDA.Params import checkpaired, checkstranded, check_IP, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string, get_cutoff_as_string, get_reps, get_reps_file, get_diego_samples, get_diego_groups, get_pairing, set_pairing, get_samples_postprocess, fixRunParameters, resolve_sequencing
+from MONSDA.Params import checkpaired, checkstranded, check_IP, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string, get_cutoff_as_string, get_reps, get_reps_file, get_diego_samples, get_diego_groups, get_pairing, set_pairing, get_samples_postprocess, fixRunParameters, resolve_sequencing, sample_from_wildcard
 from MONSDA.Utils import get_dict_hash, sub_dict, makeoutdir, keysets_from_dict, dict_inst
 loglevel='INFO'
 try:
@@ -126,7 +126,7 @@ if stranded != '':
     log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))
 def raw_fastq_input(wildcards, read=None):
     sample = getattr(wildcards, 'file', None) or getattr(wildcards, 'rawfile')
-    rawfile = [x for x in SAMPLES if x.split(os.sep)[-1] in sample][0]
+    rawfile = sample_from_wildcard(sample, SAMPLES)
     read = read or getattr(wildcards, 'read', None)
     suffix = f"_{read}" if read else ("_R1" if paired in ['paired', 'singlecell'] else "")
     return f"FASTQ/{rawfile}{suffix}.fastq.gz"
@@ -433,8 +433,8 @@ if COUNTTOOL == 'salmon':
         shell:  "set +euo pipefail; {params.mapp} index {params.ipara} {params.decoy} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}"
     if DTU_PAIRED == 'paired':
         rule simulate_trim:
-            input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R1_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file),
-                    r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R2_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
+            input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=sample_from_wildcard(wildcards.file, SAMPLES)) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R1_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file),
+                    r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=sample_from_wildcard(wildcards.file, SAMPLES)) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R2_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
             output: r1 = "TRIMMED_FASTQ/{scombo}/{file}_R1_trimmed.fastq.gz",
                     r2 = "TRIMMED_FASTQ/{scombo}/{file}_R2_trimmed.fastq.gz"
             threads: 1
@@ -443,7 +443,7 @@ if COUNTTOOL == 'salmon':
             shell:  "ln -s {params.filetolink} {output.r1} && ln -s {params.filetolink2} {output.r2}"
     else:
         rule simulate_trim:
-            input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
+            input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=sample_from_wildcard(wildcards.file, SAMPLES)) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
             output: r1 = "TRIMMED_FASTQ/{scombo}/{file}_trimmed.fastq.gz"
             threads: 1
             params: filetolink = lambda w, input: "{r}".format(r=os.path.abspath(input.r1))

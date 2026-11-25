@@ -197,7 +197,7 @@ workflow FUSIONS{
     }
     else{
         MAPPEDSAMPLES = params.gLONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../MAPPED/${params.gCOMBO}/"+element+"*.Chimeric.out.junction"
+            element -> return "${workflow.workDir}/../MAPPED/${params.gCOMBO}/"+element+".Chimeric.out.junction"
         }
         mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
         starfusion(genomefile.combine(annofile.combine(mapsamples_ch.collate(1))))

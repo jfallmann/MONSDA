@@ -114,7 +114,7 @@ workflow FUSIONS{
     }
     else{
         MAPPEDSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"*.Chimeric.out.junction"
+            element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+".Chimeric.out.junction"
         }
 
         mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())

@@ -51,7 +51,7 @@ process featurecount_edger{
     ol = fn+".log"
     def sortmem = Math.ceil(task.memory.giga as double) as int 
     if (DASPAIRED == 'paired'){
-        pair = "-p"
+        pair = "-p --countReadPairs"
     }
     else{
         pair= ""

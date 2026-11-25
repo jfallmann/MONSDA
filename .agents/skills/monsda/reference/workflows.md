@@ -22,6 +22,39 @@ can put under that step's `TOOLS` key. Env names match a `.yaml` in `envs/`.
 | `CIRCS` | circRNA detection | `ciri2: $Path_to_CIRI2.pl` (install locally, no conda pkg) |
 | `FUSIONS` | Fusion gene detection | `starfusion: STAR-Fusion` — needs `MAPPING` with `star` and chimeric output enabled (`--chimSegmentMin 12 --chimOutType Junctions` in the STAR `MAP` OPTIONS), or set `FUSIONS.OPTIONS.FASTQ = "true"` to run directly on trimmed FASTQ instead. Needs a CTAT genome resource dir in `INDEX` (auto-built from `REFERENCE`+`ANNOTATION` if missing — slow). |
 
+## BASECALL raw signal (`RAW/<condition-path>`)
+
+One basecalling job is generated per biological sample and every raw signal
+file of that sample is a tracked input. The selected caller fixes the format:
+`guppy` reads `.fast5`, `dorado` reads `.pod5`; files of the other format are
+ignored and never mixed into a sample. Each sample owns its raw signal through
+exactly one of three sources below `RAW/<condition-path>` (the condition path
+of its leaf, e.g. `RAW/Test` for `Test`):
+
+- the single file `<id>.fast5` (`<id>.pod5` for dorado)
+- the directory `<id>/`, scanned recursively for the caller's extension
+- the explicit list `<id>.fast5.list` (`<id>.pod5.list`), one path per line,
+  relative to `RAW/<condition-path>`, for loose files outside a per-sample
+  directory
+
+```text
+RAW/Test/S1.fast5              # single file, guppy
+RAW/Test/S2/run_1.fast5        # recursive directory, guppy
+RAW/Test/S3.fast5.list         # explicit list, guppy
+RAW/Test/loose/loose_a.fast5
+```
+
+with `S3.fast5.list` holding `loose/loose_a.fast5`.
+
+Matching is exact, there is no prefix guessing: `S1` never picks up
+`S10.fast5` or `S1_extra.fast5`. MONSDA stops with an actionable error when a
+sample has no source, when more than one source exists (ambiguous), when a
+listed path is absolute, leaves the condition directory, is missing, is not a
+regular file, has the wrong extension or is empty, when a list repeats an
+entry, and when one raw file would be claimed by two samples. Output is one
+FASTQ per sample, `FASTQ/<condition-path>/<id>.fastq.gz`, in both the
+Snakemake and the Nextflow engine.
+
 Notes:
 
 - QC runs automatically again after any processing step if enabled, in
@@ -39,6 +72,11 @@ Notes:
 - Bisulfite: `bwameth` or `segemehl{2,3}bisulfite` for MAPPING.
 - Tools marked "no conda pkg" need `ENV`/`BIN` pointing at a locally
   installed executable instead of a bioconda environment name.
+- featureCounts count units: the featureCounts calls in `COUNTING`, `DE`,
+  `DEU` and `DAS` run with `-p --countReadPairs` when the resolved
+  pairedness of the step is `paired`, so counts are fragments (read pairs);
+  single-end data is counted per read. No config key and no extra `OPTIONS`
+  flag is needed.
 - `PostDE` (gProfiler/clusterProfiler/GSVA/decoupleR/dream enrichment on top
   of `DE` with `deseq2`/`edger`) lives under `DE.POSTDE` in the main config,
   not a `WORKFLOWS` entry — see `reference/config-guide.md`. With a

@@ -72,6 +72,51 @@ Creates FASTQ files from ONT FAST5, Guppy needs to be installed locally
   +--------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------+--------------------+-----------------------------------------------------------------------+-------+--------+
   
 
+One basecalling job is generated per biological sample, and every raw signal file that
+belongs to that sample is a tracked input. The selected caller decides the input format:
+Guppy reads ``.fast5``, Dorado reads ``.pod5``. Files of the other format are ignored,
+they are never mixed into a sample.
+
+A sample named ``S1`` in condition ``Test`` owns its raw signal through exactly one of
+three sources below ``RAW/Test``:
+
+* the single file ``S1.fast5`` (``S1.pod5`` for Dorado)
+* the directory ``S1/``, scanned recursively for files with the caller's extension
+* the explicit list ``S1.fast5.list`` (``S1.pod5.list``), one path per line, relative to
+  ``RAW/Test``, for loose files that live outside a per-sample directory
+
+.. code-block:: text
+
+    RAW/Test/S1.fast5                          # single file, Guppy
+    RAW/Test/S10.pod5                          # single file, Dorado
+    RAW/Test/S2/run_1.fast5                    # recursive directory, Guppy
+    RAW/Test/S2/sub/run_1.fast5
+    RAW/Test/S3.fast5.list                     # explicit list, Guppy
+    RAW/Test/loose/loose_a.fast5
+    RAW/Test/loose/loose_b.fast5
+
+with ``S3.fast5.list`` holding
+
+.. code-block:: text
+
+    loose/loose_a.fast5
+    loose/loose_b.fast5
+
+Exactly one source per sample is allowed. MONSDA stops with an actionable error when a
+sample has no source, when more than one source exists, when a listed path is absolute,
+leaves the condition directory, is missing, is not a regular file, has the wrong
+extension or is empty, when a list repeats an entry, and when one raw file would be
+claimed by two samples. Matching is exact: ``S1`` never picks up ``S10.fast5`` or
+``S1_extra.fast5``.
+
+.. note::
+
+    Configurations written for the previous prefix-glob behaviour keep working as long as
+    each sample has a file named ``<id>.fast5``/``<id>.pod5`` directly below its condition
+    directory. A sample whose raw files were only reachable through a name prefix, for
+    example ``S1_run1.fast5`` next to a configured sample ``S1``, now has to be described
+    by a per-sample directory or an explicit ``.list`` file.
+
 QUALITY CONTROL I
 ##################
 

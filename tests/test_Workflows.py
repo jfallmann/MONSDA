@@ -1,7 +1,10 @@
 import glob
+import gzip
 import json
 import os
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -840,3 +843,187 @@ def test_scripts_called_without_interpreter_are_executable():
         if not os.access(REPO / "scripts" / name, os.X_OK)
     )
     assert not_executable == []
+
+
+# --------------------------------------------------------------------------- #
+# featureCounts paired-end counting: fragments, not reads.
+# --------------------------------------------------------------------------- #
+
+FC_PAIRED_FLAG = "-p --countReadPairs"
+
+# workflow template -> (postprocessing step, generated subworkflow token, sites)
+FC_TEMPLATES = {
+    "countreads": ("COUNTING", "countreads", {"smk": 4, "nf": 1}),
+    "deseq2_DE": ("DE", "deseq2", {"smk": 1, "nf": 1}),
+    "edger_DE": ("DE", "edger", {"smk": 1, "nf": 1}),
+    "dexseq_DEU": ("DEU", "dexseq", {"smk": 1, "nf": 1}),
+    "edger_DEU": ("DEU", "edger", {"smk": 1, "nf": 1}),
+    "edger_DAS": ("DAS", "edger", {"smk": 1, "nf": 1}),
+    "diego_DAS": ("DAS", "diego", {"smk": 1, "nf": 1}),
+}
+
+
+def _fc_subworkflows(engine, layout, workdir, steps=("COUNTING", "DE", "DEU", "DAS")):
+    """Generate the post subworkflows that carry a featureCounts branch."""
+    cfg = _load("config_Test.json")
+    cfg["SETTINGS"]["Test"]["SEQUENCING"] = layout
+    cfg["DEU"]["TOOLS"]["dexseq"] = "Analysis/DEU/DEXSEQ.R"
+    cfg["DEU"]["Test"]["dexseq"] = {
+        "OPTIONS": {"QUANT": "-t exon -g gene_id -f", "DEU": ""}
+    }
+    cfg["DAS"]["TOOLS"]["diego"] = "Analysis/DAS/DIEGO.R"
+    cfg["DAS"]["Test"]["diego"] = {
+        "OPTIONS": {"QUANT": "-t exon -g gene_id -f", "DAS": ""}
+    }
+    conditions = mp.get_conditions(cfg)
+    _pre, sub, _post = mw.get_processes(cfg)
+    combos = mw.get_combo(sub, cfg, conditions)
+    produced = {}
+    for step in steps:
+        subdir = f"Fc{engine}{layout}{step}"
+        mp.create_skeleton(subdir, None)
+        samples = mp.get_samples_postprocess(cfg, step)
+        if engine == "smk":
+            mw.make_post(
+                step, cfg, samples, conditions, subdir, "INFO", combinations=combos
+            )
+            suffix = "subsnake.smk"
+        else:
+            mw.nf_make_post(
+                step, cfg, samples, conditions, subdir, "INFO", combinations=combos
+            )
+            suffix = "subflow.nf"
+        for conf in glob.glob(os.path.join(subdir, "*_subconfig.json")):
+            sequencing = json.loads(Path(conf).read_text())["SETTINGS"]["Test"]
+            assert sequencing["SEQUENCING"] == layout
+        for path in glob.glob(os.path.join(subdir, f"*_{step}_*_{suffix}")):
+            produced[os.path.basename(path)] = Path(path).read_text()
+    return produced
+
+
+def _fc_flags(text, engine, step, layout):
+    """Resolve the featureCounts paired flag of every site in a subworkflow."""
+    if engine == "smk":
+        exprs = re.findall(
+            r"paired\s*=\s*lambda x: (.+?) if %s_PAIRED == 'paired' else ''" % step,
+            text,
+        )
+        return [eval(expr, {f"{step}_PAIRED": layout}) for expr in exprs]
+    branches = re.findall(
+        r"if \(params\.g%sPAIRED == 'paired'\)\{\s*pair = \"([^\"]*)\"\s*\}"
+        r"\s*else\{\s*pair= \"([^\"]*)\"\s*\}" % step,
+        text,
+    )
+    return [paired if layout == "paired" else single for paired, single in branches]
+
+
+def _fc_rendered_command(text, engine):
+    """The rendered featureCounts command line of the countreads subworkflow."""
+    if engine == "smk":
+        line = next(
+            row.strip()
+            for row in text.splitlines()
+            if row.strip().startswith("shell:")
+            and "{params.countb} -T {threads}" in row
+        )
+        return line.split("shell:", 1)[1].strip().strip('"')
+    return next(
+        row.strip()
+        for row in text.splitlines()
+        if "${params.gCOUNTBIN} -T ${task.cpus}" in row
+    )
+
+
+def _fc_run(engine, text, layout, fc, workdir):
+    """Run the rendered countreads command with the real featureCounts."""
+    run = workdir / f"fc_run_{engine}_{layout}"
+    run.mkdir()
+    (run / "LOGS").mkdir()
+    anno = str(workdir / "fc_anno.gtf.gz")
+    reads = str(workdir / ("fc_frag.sam" if layout == "paired" else "fc_single.sam"))
+    flag = FC_PAIRED_FLAG if layout == "paired" else ""
+    command = _fc_rendered_command(text, engine)
+    env = None
+    if engine == "smk":
+        for key, value in {
+            "{params.countb}": fc,
+            "{threads}": "1",
+            "{params.cpara}": "-t exon -g gene_id",
+            "{params.paired}": flag,
+            "{params.stranded}": "",
+            "{params.anno}": anno,
+            "{output.t}": "tmpcts",
+            "{input.s}": reads,
+            "{log}": "LOGS/count.log",
+            "{output.cts}": "counts.gz",
+            "{params.sortmem}": "1",
+        }.items():
+            command = command.replace(key, value)
+    else:
+        command = (
+            command.replace("${params.gCOUNTBIN}", fc)
+            .replace("${params.gCOUNTPARAMS}", "-t exon -g gene_id")
+            .replace("${params.gCOUNTMAP}", "")
+            .replace("${task.cpus}", "1")
+        )
+        env = dict(
+            os.environ,
+            pair=flag,
+            stranded="",
+            anno=anno,
+            reads=reads,
+            ol="count.log",
+            oc="counts.gz",
+            os="counts.summary",
+            sortmem="1",
+        )
+    result = subprocess.run(
+        ["bash", "-c", command], cwd=run, env=env, capture_output=True, text=True
+    )
+    assert result.returncode == 0, result.stderr
+    rows = gzip.open(run / "counts.gz", "rt").read().splitlines()[2:]
+    return {row.split("\t")[0]: int(row.split("\t")[-1]) for row in rows}
+
+
+@pytest.mark.parametrize("engine", ["smk", "nf"])
+@pytest.mark.parametrize("layout", ["paired", "single"])
+def test_featurecounts_paired_flag_counts_fragments(engine, layout, workdir):
+    produced = _fc_subworkflows(engine, layout, workdir)
+    expected = FC_PAIRED_FLAG if layout == "paired" else ""
+    for template, (step, token, sites) in FC_TEMPLATES.items():
+        name = next(n for n in produced if f"_{step}_{token}_sub" in n)
+        flags = _fc_flags(produced[name], engine, step, layout)
+        assert len(flags) == sites[engine], (template, flags)
+        assert set(flags) == {expected}, (template, flags)
+
+
+@pytest.mark.parametrize("engine", ["smk", "nf"])
+def test_featurecounts_rendered_command_counts_fragments(engine, workdir):
+    fc = shutil.which("featureCounts")
+    if not fc:
+        pytest.skip("featureCounts is not on PATH")
+
+    anno = workdir / "fc_anno.gtf"
+    anno.write_text(
+        'chr1\ttest\texon\t100\t200\t.\t+\t.\tgene_id "g1"; transcript_id "t1";\n'
+    )
+    subprocess.run(["gzip", "-kf", str(anno)], check=True)
+    seq, qual = "A" * 50, "I" * 50
+    header = "@HD\tVN:1.6\tSO:coordinate\n@SQ\tSN:chr1\tLN:1000\n"
+    (workdir / "fc_frag.sam").write_text(
+        header
+        + f"r1\t99\tchr1\t120\t60\t50M\t=\t160\t90\t{seq}\t{qual}\n"
+        + f"r1\t147\tchr1\t160\t60\t50M\t=\t120\t-90\t{seq}\t{qual}\n"
+    )
+    (workdir / "fc_single.sam").write_text(
+        header
+        + f"s1\t0\tchr1\t120\t60\t50M\t*\t0\t0\t{seq}\t{qual}\n"
+        + f"s2\t0\tchr1\t160\t60\t50M\t*\t0\t0\t{seq}\t{qual}\n"
+    )
+
+    expected = {"paired": 1, "single": 2}
+    for layout in ("paired", "single"):
+        produced = _fc_subworkflows(engine, layout, workdir, steps=("COUNTING",))
+        name = next(n for n in produced if "_COUNTING_countreads_sub" in n)
+        counts = _fc_run(engine, produced[name], layout, fc, workdir)
+        assert counts["g1"] == expected[layout], (engine, layout, counts)

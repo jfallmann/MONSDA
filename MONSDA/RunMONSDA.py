@@ -191,6 +191,19 @@ def _snakemake_job_command(smko, confo, threads, workdir, rest, pull_apptainer_o
     return f"snakemake -j {threads} -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs{extra_opts} {rest}"
 
 
+def _fastq_available() -> bool:
+    """Return True if at least one FASTQ file is present in the working directory.
+
+    FETCH and BASECALL produce the FASTQ files they work on, so before those
+    steps have run (e.g. with --save) there is nothing to collect and the
+    samples from the preprocessing step have to be kept.
+    """
+    for root, _dirs, files in os.walk("FASTQ"):
+        if any(name.endswith(".fastq.gz") for name in files):
+            return True
+    return False
+
+
 def run_snakemake(
     configfile,
     workdir,
@@ -304,6 +317,7 @@ def run_snakemake(
         START TO PREPROCESS
         IF WE NEED TO DOWNLOAD FILES WE DO THIS NOW
         """
+        SAMPLES = None
         if preprocess:
             for proc in [
                 x for x in preprocess if config.get(x) and x in ["FETCH", "BASECALL"]
@@ -374,7 +388,7 @@ def run_snakemake(
                 logid
                 + f"Prepared {merged_lane_fastqs} lane-merged FASTQ files before sample collection"
             )
-        SAMPLES = mp.get_samples(config)
+        SAMPLES = mp.get_samples(config) if SAMPLES is None or _fastq_available() else SAMPLES
         log.info(logid + "SAMPLES: " + str(SAMPLES))
 
         if preprocess:
@@ -647,7 +661,7 @@ def run_nextflow(
         START TO PROCESS
         IF WE NEED TO DOWNLOAD FILES WE DO THIS NOW
         """
-
+        SAMPLES = None
         if preprocess:
             for proc in [
                 x for x in preprocess if config.get(x) and x in ["FETCH", "BASECALL"]
@@ -732,7 +746,7 @@ def run_nextflow(
                 logid
                 + f"Prepared {merged_lane_fastqs} lane-merged FASTQ files before sample collection"
             )
-        SAMPLES = mp.get_samples(config)
+        SAMPLES = mp.get_samples(config) if SAMPLES is None or _fastq_available() else SAMPLES
         log.info(logid + "SAMPLES: " + str(SAMPLES))
         conditions = mp.get_conditions(config)
         log.info(logid + "CONDITIONS: " + str(conditions))

@@ -4,6 +4,8 @@ CALLERBIN = get_always('BASECALLBIN')
 CALLERPARAMS = get_always('guppy_params_BASECALL') ?: ''
 MODELPARAMS = get_always('guppy_params_MODEL') ?: ''
 
+BASECALLMAP = new groovy.json.JsonSlurper().parse(new File(get_always('BASECALL_MANIFEST')))
+
 //CALLERS PROCESSES
 
 process guppy{
@@ -22,22 +24,23 @@ process guppy{
     }
 
     input:
-    path f5
+    tuple val(sample), path(f5, stageAs: 'inputs/signal????.fast5')
 
     output:
-    path ".fastq.gz", emit: fastq
+    path "*.fastq.gz", emit: fastq
     path "*_telemetry.js", emit: telemetry
     path "*_summary.txt", emit: summary
     path "*.log", emit: log
 
     script:
-    fn = file(f5).getSimpleName()
+    fn = sample.split('/').last()
     oc = fn+".fastq.gz"
     ol = fn+".log"
-    def sortmem = Math.ceil(task.memory.giga as double) as int 
     
     """
-    mkdir -p TMP; echo \"${f5}\" > f5list && $CALLERBIN $CALLERPARAMS  -c $MODELPARAMS --compress_fastq -i . --input_file_list f5list -s TMP 2> $ol && cat TMP/pass/fastq_runid_*.fastq.gz > $oc && cat TMP/*.log >> $ol && mv -f TMP/sequencing_summary.txt . &&  mv -f TMP/sequencing_telemetry.js . && rm -rf TMP
+    mkdir -p TMP
+    for f in inputs/*.fast5; do basename "\$f"; done > f5list
+    $CALLERBIN $CALLERPARAMS -c $MODELPARAMS --compress_fastq -i inputs --input_file_list f5list -s TMP 2> $ol && cat TMP/pass/fastq_runid_*.fastq.gz > $oc && cat TMP/*.log >> $ol && mv -f TMP/sequencing_summary.txt ${fn}_summary.txt && mv -f TMP/sequencing_telemetry.js ${fn}_telemetry.js && rm -rf TMP f5list
     """
 }
 
@@ -46,13 +49,13 @@ workflow BASECALL{
 
     main:
 
-    F5SAMPLES = SAMPLES.collect{
-        element -> return "${workflow.workDir}/../RAW/"+element+"*.fast5"
+    SIGNALS = SAMPLES.collect{
+        element -> return [element, BASECALLMAP[element].collect{ p -> return "${workflow.workDir}/../"+p }]
     }
 
-    f5samples_ch = Channel.fromPath(F5SAMPLES.sort())  
+    signals_ch = Channel.fromList(SIGNALS)
     
-    guppy(f5samples_ch.collate(1))
+    guppy(signals_ch)
 
     emit:
     fastq = guppy.out.fastq

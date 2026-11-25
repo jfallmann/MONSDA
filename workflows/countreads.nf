@@ -212,7 +212,7 @@ process featurecount{
     ol = fn+".log"
     def sortmem = Math.ceil(task.memory.giga as double) as int 
     if (COUNTINGPAIRED == 'paired'){
-        pair = "-p"
+        pair = "-p --countReadPairs"
     }
     else{
         pair= ""
@@ -315,14 +315,14 @@ workflow COUNTING{
             element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
         }
         TRIMSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"*.fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_trimmed.fastq.gz"
         }
         DEDUPSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../DEDUP_FASTQ/${COMBO}/"+element+"*.fastq.gz"
+            element -> return "${workflow.workDir}/../DEDUP_FASTQ/${COMBO}/"+element+"_dedup.fastq.gz"
         }
     }
     MAPPEDSAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"*.bam"
+        element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted{,_*}.bam"
     }
 
     rawsamples_ch = Channel.fromPath(RAWSAMPLES.sort())

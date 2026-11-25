@@ -16,7 +16,7 @@ for x in cmd_subfolder:
     if x not in sys.path:
         sys.path.insert(0, x)
 from MONSDA.Logger import makelogdir, setup_logger
-from MONSDA.Params import checkpaired, checkstranded, check_IP, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string, get_cutoff_as_string, get_reps, get_reps_file, get_diego_samples, get_diego_groups, get_pairing, set_pairing, get_samples_postprocess, fixRunParameters, resolve_sequencing
+from MONSDA.Params import checkpaired, checkstranded, check_IP, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string, get_cutoff_as_string, get_reps, get_reps_file, get_diego_samples, get_diego_groups, get_pairing, set_pairing, get_samples_postprocess, fixRunParameters, resolve_sequencing, sample_from_wildcard
 from MONSDA.Utils import get_dict_hash, sub_dict, makeoutdir, keysets_from_dict, dict_inst
 loglevel='INFO'
 try:
@@ -126,7 +126,7 @@ if stranded != '':
     log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))
 def raw_fastq_input(wildcards, read=None):
     sample = getattr(wildcards, 'file', None) or getattr(wildcards, 'rawfile')
-    rawfile = [x for x in SAMPLES if x.split(os.sep)[-1] in sample][0]
+    rawfile = sample_from_wildcard(sample, SAMPLES)
     read = read or getattr(wildcards, 'read', None)
     suffix = f"_{read}" if read else ("_R1" if paired in ['paired', 'singlecell'] else "")
     return f"FASTQ/{rawfile}{suffix}.fastq.gz"

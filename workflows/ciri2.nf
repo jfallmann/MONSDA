@@ -48,7 +48,7 @@ workflow CIRCS{
     main:
 
     MAPPEDSAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"*_mapped_sorted.sam.gz"
+        element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted.sam.gz"
     }
 
     mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())  

@@ -1,4 +1,11 @@
+from MONSDA.Params import basecall_signal_map
+
 CALLERBIN, CALLERENV = env_bin_from_config(config,'BASECALL')
+
+SIGNALS = basecall_signal_map(config, 'guppy')
+
+def basecall_inputs(wildcards):
+    return SIGNALS[wildcards.rawfile]
 
 wildcard_constraints:
     rawfile = '|'.join(SAMPLES)
@@ -7,7 +14,7 @@ rule themall:
     input: expand("FASTQ/{rawfile}.fastq.gz", rawfile = SAMPLES)
 
 rule call_base:
-    input:  f5 = "RAW/{rawfile}.fast5"
+    input:  f5 = lambda wildcards: basecall_inputs(wildcards)
     output: fq = "FASTQ/{rawfile}.fastq.gz",
             summary = "FASTQ/{rawfile}_summary.txt",
             telemetry = "FASTQ/{rawfile}_telemetry.js"
@@ -18,7 +25,23 @@ rule call_base:
     params: caller = CALLERBIN,
             cpara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'BASECALL', CALLERENV)['OPTIONS'].get('BASECALL', ""),
             cmodel = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'BASECALL', CALLERENV)['OPTIONS'].get('MODEL', ""),
-            f5dir = lambda wildcards, input: os.path.dirname(input.f5),
-            f5file = lambda wildcards, input: os.path.basename(input.f5),
             fqdir = lambda wildcards, output: os.path.dirname(output.fq)
-    shell: " echo \"{params.f5file}\" > {params.f5dir}/f5list && {params.caller} {params.cpara} -c {params.cmodel} --compress_fastq -i {params.f5dir} --input_file_list {params.f5dir}/f5list -s {params.f5dir}/BASECALL 2> {log} && cat {params.f5dir}/BASECALL/pass/fastq_runid_*.fastq.gz > {output.fq} && rm -f {params.f5dir}/BASECALL/pass/fastq_runid_*.fastq.gz && cat {params.f5dir}/BASECALL/*.log >> {log} && rm -f {params.f5dir}/BASECALL/*.log && mv -f {params.f5dir}/BASECALL/sequencing_summary.txt {output.summary} &&  mv -f {params.f5dir}/BASECALL/sequencing_telemetry.js {output.telemetry} && rm -f {params.f5dir}/f5list"
+    shell:
+        """
+        set -euo pipefail
+        taskdir=$(mktemp -d)
+        trap 'rm -rf "$taskdir"' EXIT
+        mkdir -p "$taskdir/inputs" "$taskdir/out"
+        i=0
+        for f in {input.f5:q}; do
+            i=$((i+1))
+            n=$(printf '%04d_%s' "$i" "$(basename "$f")")
+            ln -s "$(readlink -f "$f")" "$taskdir/inputs/$n"
+            printf '%s\\n' "$n"
+        done > "$taskdir/inputs.list"
+        {params.caller} {params.cpara} -c {params.cmodel:q} --compress_fastq -i "$taskdir/inputs" --input_file_list "$taskdir/inputs.list" -s "$taskdir/out" 2> {log:q}
+        cat "$taskdir"/out/pass/fastq_runid_*.fastq.gz > {output.fq:q}
+        cat "$taskdir"/out/*.log >> {log:q}
+        mv -f "$taskdir/out/sequencing_summary.txt" {output.summary:q}
+        mv -f "$taskdir/out/sequencing_telemetry.js" {output.telemetry:q}
+        """

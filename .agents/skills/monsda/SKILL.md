@@ -14,8 +14,8 @@ JSON and guessing at tool names.
 
 Read the reference files below on demand (do not load all of them up front):
 
-- `reference/config-guide.md` — config.json anatomy, condition-tree, OPTIONS/TOOLS, samplesheet shortcut. Read before writing or editing any config.
-- `reference/workflows.md` — available `WORKFLOWS` steps and the tools each one accepts. Read when choosing which steps/tools to enable.
+- `reference/config-guide.md` — config.json anatomy, condition-tree, OPTIONS/TOOLS, samplesheet shortcut, and the `SAMPLES` naming rules for `single`/`paired`/`singlecell` data including Illumina BCL Convert names. Read before writing or editing any config.
+- `reference/workflows.md` — available `WORKFLOWS` steps and the tools each one accepts, plus the `RAW/<condition-path>` raw signal layout for `BASECALL` (Guppy FAST5, Dorado POD5). Read when choosing which steps/tools to enable.
 - `reference/cli.md` — `monsda` / `monsda_configure` CLI flags, the generate-then-dry-run validation recipe, cluster profiles. Read before invoking any command.
 
 ## Decision flow

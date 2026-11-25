@@ -5,8 +5,8 @@ MULTXBIN, MULTXENV = env_bin_from_config(config, 'DEMULTIPLEXING')
 if paired == 'paired':
     rule multx_demux_first:
         input:
-            r1 = lambda wildcards: "PREFASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-            r2 = lambda wildcards: "PREFASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+            r1 = lambda wildcards: "PREFASTQ/{rawfile}_R1.fastq.gz".format(rawfile=sample_from_wildcard(wildcards.file, SAMPLES)),
+            r2 = lambda wildcards: "PREFASTQ/{rawfile}_R2.fastq.gz".format(rawfile=sample_from_wildcard(wildcards.file, SAMPLES)),
             whitelist = "Multx_whitelist.txt"
         output:
             o1 = temp("FASTQ/{combo}/{file}_R1_demux.fastq.gz"),

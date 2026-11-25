@@ -1,8 +1,10 @@
 CALLERENV = get_always('BASECALLENV')
 CALLERBIN = get_always('BASECALLBIN')
 
-CALLERPARAMS = get_always('dorado_params_CALLER') ?: ''
+CALLERPARAMS = get_always('dorado_params_BASECALL') ?: get_always('dorado_params_CALLER') ?: ''
 MODELPARAMS = get_always('dorado_params_MODEL') ?: ''
+
+BASECALLMAP = new groovy.json.JsonSlurper().parse(new File(get_always('BASECALL_MANIFEST')))
 
 //CALLERS PROCESSES
 
@@ -20,20 +22,20 @@ process dorado{
     }
 
     input:
-    path f5
+    tuple val(sample), path(p5, stageAs: 'inputs/signal????.pod5')
 
     output:
     path "*.fastq.gz", emit: fastq
     path "*.log", emit: log
 
     script:
-    fn = file(f5).getSimpleName()
+    fn = sample.split('/').last()
     oc = fn+".fastq.gz"
     ol = fn+".log"
-    def sortmem = Math.ceil(task.memory.giga as double) as int 
     
     """
-    $CALLERBIN download --model $MODELPARAMS &> $ol && $CALLERBIN basecaller $CALLERPARAMS $MODELPARAMS . 2>> $ol 1> tmp.bam && samtools view -h tmp.bam|samtools fastq -n - | pigz 1> $oc 2>> $ol && rm -rf tmp.bam
+    set -o pipefail
+    $CALLERBIN download --model $MODELPARAMS &> $ol && $CALLERBIN basecaller $CALLERPARAMS $MODELPARAMS inputs 2>> $ol 1> tmp.bam && samtools view -h tmp.bam|samtools fastq -n - | pigz 1> $oc 2>> $ol && rm -rf tmp.bam
     """
 }
 
@@ -42,13 +44,13 @@ workflow BASECALL{
 
     main:
 
-    P5SAMPLES = SAMPLES.collect{
-        element -> return "${workflow.workDir}/../RAW/"+element+"*.pod5"
+    SIGNALS = SAMPLES.collect{
+        element -> return [element, BASECALLMAP[element].collect{ p -> return "${workflow.workDir}/../"+p }]
     }
 
-    p5samples_ch = Channel.fromPath(P5SAMPLES.sort())  
+    signals_ch = Channel.fromList(SIGNALS)
     
-    dorado(p5samples_ch.collate(1))
+    dorado(signals_ch)
 
     emit:
     fastq = dorado.out.fastq

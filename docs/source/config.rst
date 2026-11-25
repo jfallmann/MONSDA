@@ -20,11 +20,42 @@ The next part defines 'SETTINGS', which is where you define which samples to pro
     :language: json
     :lines: 6-23
 
-To define the samples to run the analysis on, just add a list of sample names as innermost value
-to the *SAMPLES* key for each condition.  In case of single-end sequencing make sure to include any _R1 _R2
-tag should such exist, in case of paired end skip those as the pipeline will automatically look for _R1 and _R2 tags to find read pairs and prevent you from having to write duplicated information.
+For paired-end data the canonical and only required naming is a matching pair of files per
+sample, ``<id>_R1.fastq.gz`` and ``<id>_R2.fastq.gz``, and the *SAMPLES* list of a condition
+then holds only the bare ``<id>``, one entry per sample: MONSDA derives the ``_R1``/``_R2``
+suffixes itself, so the read tags are never written into the config. For single-end data
+*SAMPLES* holds the file stem, i.e. the file name without the trailing ``.fastq.gz``; if that
+stem itself ends in a literal ``_R1`` (``sample_R1.fastq.gz``), the ``_R1`` is part of the
+sample name and has to be kept.
 
-*Make sure the naming of you samples follows this _R1 _R2 convention when running paired-end analysis! All files have to end with _R1.fastq.gz or _R2.fastq.gz for paired end and .fastq.gz for single-end processing respectively. MONSDA will append these suffixes automatically* 
+.. code-block:: json
+
+    {"SAMPLES": ["381915_S1"]}
+
+Illumina BCL Convert names its FASTQ files
+``<Sample_ID>_S#_L00#_R#_001.fastq.gz`` and omits the lane part when run with
+``--no-lane-splitting`` (`Illumina BCL Convert output files
+<https://support-docs.illumina.com/SW/BCL_Convert/Content/SW/BCLConvert/OutputFiles__swBCL_swBS_appBCL.htm>`_),
+so ``381915_S1_L001_R1_001.fastq.gz`` and ``381915_S1_L002_R2_001.fastq.gz`` are both covered
+by the single *SAMPLES* entry ``381915_S1``: the ``S1`` sample number is kept as part of the
+name, and the trailing ``_001`` is a file counter, not another sample or replicate. MONSDA
+additionally accepts the reversed ``<id>_R1_L001.fastq.gz`` order for backwards compatibility
+with older MONSDA setups; that order is not an Illumina convention. Lane-split files are
+concatenated into ``<id>_R1.fastq.gz``/``<id>_R2.fastq.gz`` for paired-end and single-cell
+runs and into ``<id>.fastq.gz`` for single-end runs, so no manual renaming is needed there.
+
+There is no universal NGS convention for biological sample identifiers, and MONSDA neither
+validates nor restricts the characters used. The following is a portability recommendation,
+not a rule enforced by MONSDA or by Illumina: start the identifier with an ASCII letter or
+digit, build the biological label from letters, digits and hyphens, and keep the standalone
+``_L<digits>`` lane token and the mate/``_001`` metadata tokens reserved for their file-name
+meaning. In particular, a sample identifier should not contain ``_L001`` (or any other
+``_L<digits>``) anywhere, since it cannot be told apart from a lane token; write
+``Tumor-L001``, ``TumorLane001`` or similar instead. Identifiers should be unique across the
+project. If the same identifier is reused in different condition directories, the FASTQ
+wildcards have to be qualified by condition so files are not mixed up; the condition is
+expressed by the position in the condition tree, not by typing it into the *SAMPLES* list of
+a leaf.
 
 The *SEQUENCING* key allows you to define *single* , *paired* or *singlecell* as values to enable analysis of a mix of single- and paired end or singlecell sequences at once, split in different leafs of the condition-tree.  You can also specify strandedness of the data at hand. If unstranded leave empty, else add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+]). **MONSDA** will use these values to configure tools automatically where possible. It is therefore not required to add sequencing specific settings for each used tool to your config file.
 
@@ -47,6 +78,7 @@ The next key-level is the *OPTIONS* key which is where you can define additional
   * **DTU quantifier**: any DTU tool accepts a ``COUNTTOOL`` option (analogous to the top-level ``TOOLS`` key, but for the quantifier used to generate its transcript-level counts), defaulting to ``salmon``. Set it to ``oarfish`` to run DTU on long-read data, quantifying directly from the already-mapped genome BAM instead of indexing/quantifying with salmon from FASTQ. ``TERMINUS`` pre-grouping is only supported when ``COUNTTOOL`` is ``salmon`` and is ignored otherwise.
   * **DE gene-level counting**: any DE tool (deseq2/edger) accepts a ``COUNTTOOL`` option (analogous to the top-level ``TOOLS`` key, but for the counting step), defaulting to ``featureCounts``. Set it to ``oarfish`` to run DE on long-read data: oarfish quantifies transcripts from the already-mapped genome BAM and the transcript counts are aggregated to gene level (summing transcripts per gene, analogous to tximport), producing a featureCounts-compatible count table so downstream DE steps are unchanged. Tool options are read from the ``QUANT`` option key for whichever ``COUNTTOOL`` is selected; a legacy ``COUNT`` key is still accepted as a fallback, a non-blank ``QUANT`` wins over a non-blank ``COUNT``, and a warning names the key that was used.
   * **DEU/DAS counting tool**: DEU (dexseq/edger) and DAS (diego/edger) tools also accept a ``COUNTTOOL`` option for consistency. Only the default ``featureCounts`` is currently supported; the option exists so a future counting backend can be added without config changes.
+  * **featureCounts count units**: for paired-end data the featureCounts calls in COUNTING, DE, DEU and DAS run with ``-p --countReadPairs``, so counts are fragments (read pairs) and not reads. Single-end data is counted per read. No config key is needed, the flag follows the resolved pairedness of the step.
 
 
 .. literalinclude:: ../../configs/template.json

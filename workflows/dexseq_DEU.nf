@@ -90,7 +90,7 @@ process featurecount_dexseq{
     ol = fn+".log"
     def sortmem = Math.ceil(task.memory.giga as double) as int 
     if (DEUPAIRED == 'paired'){
-        pair = "-p"
+        pair = "-p --countReadPairs"
     }
     else{
         pair= ""
