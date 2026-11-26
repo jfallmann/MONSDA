@@ -1,4 +1,4 @@
-FROM mambaorg/micromamba:latest
+FROM condaforge/miniforge3:latest
 
 ARG ENVIRONMENT
 ARG MONSDA_VERSION
@@ -9,8 +9,10 @@ LABEL org.opencontainers.image.revision="${VCS_REF}"
 LABEL org.opencontainers.image.version="${MONSDA_VERSION}"
 LABEL org.opencontainers.image.title="MONSDA ${ENVIRONMENT} environment"
 
-COPY --chown=$MAMBA_USER:$MAMBA_USER envs/${ENVIRONMENT}.yaml /tmp/environment.yaml
-COPY --chown=$MAMBA_USER:$MAMBA_USER scripts /opt/MONSDA/scripts
+RUN useradd --create-home --uid 57439 monsda
+
+COPY envs/${ENVIRONMENT}.yaml /tmp/environment.yaml
+COPY scripts /opt/MONSDA/scripts
 RUN find /opt/MONSDA/scripts -type f \( -name '*.py' -o -name '*.R' -o -name '*.sh' -o -name '*.pl' \) -exec chmod a+x {} +
 
 # envs/monsda.yaml pins "monsda =<version>" for bioconda. Rewrite that pin to
@@ -21,11 +23,11 @@ RUN if [ "${ENVIRONMENT}" = "monsda" ]; then \
       sed -i "s/^\( *-\s*monsda\s*\)=.*/\1=${MONSDA_VERSION}/" /tmp/environment.yaml; \
     fi
 
-RUN micromamba create --yes --prefix /opt/conda/envs/monsda --file /tmp/environment.yaml \
-    && micromamba clean --all --yes
+RUN conda env create --yes --prefix /opt/conda/envs/monsda --file /tmp/environment.yaml \
+    && conda clean --all --yes
 
 ENV PATH="/opt/conda/envs/monsda/bin:${PATH}"
 ENV MONSDA_VERSION="${MONSDA_VERSION}"
 
-ENTRYPOINT ["/usr/local/bin/_entrypoint.sh"]
+USER monsda
 CMD ["/bin/bash"]

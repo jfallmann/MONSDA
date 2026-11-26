@@ -1,5 +1,5 @@
 Bootstrap: docker
-From: continuumio/miniconda3:latest
+From: condaforge/miniforge3:latest
    
 %files
     ##environment.yaml##

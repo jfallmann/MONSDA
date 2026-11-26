@@ -1,5 +1,5 @@
 Bootstrap: docker
-From: continuumio/miniconda3
+From: condaforge/miniforge3:latest
    
 %files
     ${HOME}/MONSDA/envs/dexseq_DEU.yaml /opt/envs/
