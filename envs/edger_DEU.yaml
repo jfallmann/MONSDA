@@ -12,5 +12,6 @@ dependencies:
   - bioconductor-rsamtools =2.26.0  
   - bioconductor-ruvseq=1.44.0  
   - pigz =2.6
+  - python =3.11.14
   - readline =8.2
   - sed =4.7

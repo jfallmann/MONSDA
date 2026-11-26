@@ -6,3 +6,4 @@ channels:
 dependencies:
   - oarfish =0.11.0
   - samtools =1.25
+  - python =3.14.10
